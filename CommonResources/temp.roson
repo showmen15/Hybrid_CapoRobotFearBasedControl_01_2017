@@ -1,0 +1,273 @@
+{
+  "name": null,
+  "timeout": 0,
+  "walls": [
+    {
+      "type": "wall",
+      "id": "Wall251",
+      "width": 0.1,
+      "height": 0.3,
+      "color": "ff000000",
+      "from": {
+        "x": 0.74,
+        "y": 0.4
+      },
+      "to": {
+        "x": 2.35,
+        "y": 0.4
+      }
+    },
+    {
+      "type": "wall",
+      "id": "Wall259",
+      "width": 0.1,
+      "height": 0.3,
+      "color": "ff000000",
+      "from": {
+        "x": 2.35,
+        "y": 0.4
+      },
+      "to": {
+        "x": 2.35,
+        "y": 1.38
+      }
+    },
+    {
+      "type": "wall",
+      "id": "Wall264",
+      "width": 0.1,
+      "height": 0.3,
+      "color": "ff000000",
+      "from": {
+        "x": 0.0,
+        "y": 0.0
+      },
+      "to": {
+        "x": 0.74,
+        "y": 0.0
+      }
+    },
+    {
+      "type": "wall",
+      "id": "Wall265",
+      "width": 0.1,
+      "height": 0.3,
+      "color": "ff000000",
+      "from": {
+        "x": 0.0,
+        "y": 0.0
+      },
+      "to": {
+        "x": 0.0,
+        "y": 1.38
+      }
+    },
+    {
+      "type": "wall",
+      "id": "Wall271",
+      "width": 0.1,
+      "height": 0.3,
+      "color": "ff000000",
+      "from": {
+        "x": 0.74,
+        "y": 0.0
+      },
+      "to": {
+        "x": 0.74,
+        "y": 0.4
+      }
+    },
+    {
+      "type": "wall",
+      "id": "Wall276",
+      "width": 0.1,
+      "height": 0.3,
+      "color": "ff000000",
+      "from": {
+        "x": 2.35,
+        "y": 2.5
+      },
+      "to": {
+        "x": 2.35,
+        "y": 3.26
+      }
+    },
+    {
+      "type": "wall",
+      "id": "Wall281",
+      "width": 0.1,
+      "height": 0.3,
+      "color": "ff000000",
+      "from": {
+        "x": 0.0,
+        "y": 2.5
+      },
+      "to": {
+        "x": 0.0,
+        "y": 3.26
+      }
+    },
+    {
+      "type": "wall",
+      "id": "Wall291",
+      "width": 0.1,
+      "height": 0.3,
+      "color": "ff000000",
+      "from": {
+        "x": 0.0,
+        "y": 4.9
+      },
+      "to": {
+        "x": 1.4,
+        "y": 4.9
+      }
+    },
+    {
+      "type": "wall",
+      "id": "Wall296",
+      "width": 0.1,
+      "height": 0.3,
+      "color": "ff000000",
+      "from": {
+        "x": 0.0,
+        "y": 3.26
+      },
+      "to": {
+        "x": 0.0,
+        "y": 4.9
+      }
+    },
+    {
+      "type": "wall",
+      "id": "Wall308",
+      "width": 0.1,
+      "height": 0.3,
+      "color": "ff000000",
+      "from": {
+        "x": 2.35,
+        "y": 1.38
+      },
+      "to": {
+        "x": 2.35,
+        "y": 2.5
+      }
+    },
+    {
+      "type": "wall",
+      "id": "Wall319",
+      "width": 0.1,
+      "height": 0.3,
+      "color": "ff000000",
+      "from": {
+        "x": 0.0,
+        "y": 1.38
+      },
+      "to": {
+        "x": 0.0,
+        "y": 2.5
+      }
+    },
+    {
+      "type": "wall",
+      "id": "Wall327",
+      "width": 0.1,
+      "height": 0.3,
+      "color": "ff000000",
+      "from": {
+        "x": 2.35,
+        "y": 3.26
+      },
+      "to": {
+        "x": 3.0,
+        "y": 3.26
+      }
+    },
+    {
+      "type": "wall",
+      "id": "Wall331",
+      "width": 0.1,
+      "height": 0.3,
+      "color": "ff000000",
+      "from": {
+        "x": 2.0,
+        "y": 4.9
+      },
+      "to": {
+        "x": 3.0,
+        "y": 4.9
+      }
+    },
+    {
+      "type": "wall",
+      "id": "Wall332",
+      "width": 0.1,
+      "height": 0.3,
+      "color": "ff000000",
+      "from": {
+        "x": 3.0,
+        "y": 3.26
+      },
+      "to": {
+        "x": 3.0,
+        "y": 4.9
+      }
+    },
+    {
+      "type": "wall",
+      "id": "Wall336",
+      "width": 0.1,
+      "height": 0.3,
+      "color": "ff000000",
+      "from": {
+        "x": 1.4,
+        "y": 4.9
+      },
+      "to": {
+        "x": 2.0,
+        "y": 4.9
+      }
+    },
+    {
+      "type": "wall",
+      "id": "Wall92",
+      "width": 0.1,
+      "height": 0.3,
+      "color": "ff000000",
+      "from": {
+        "x": 0.0,
+        "y": 2.5
+      },
+      "to": {
+        "x": 0.8,
+        "y": 2.5
+      }
+    },
+    {
+      "type": "wall",
+      "id": "Wall93",
+      "width": 0.1,
+      "height": 0.3,
+      "color": "ff000000",
+      "from": {
+        "x": 1.5,
+        "y": 2.5
+      },
+      "to": {
+        "x": 2.35,
+        "y": 2.5
+      }
+    }
+  ],
+  "gates": [],
+  "spaces": [],
+  "nodes": [],
+  "robots": [],
+  "victims": [],
+  "space-walls": [],
+  "space-gates": [],
+  "space-nodes": [],
+  "space-robots": [],
+  "space-victims": [],
+  "gate-nodes": [],
+  "node-nodes": []
+}

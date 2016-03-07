@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<projectDescription>
+	<name>CapoFearBasedController</name>
+	<comment></comment>
+	<projects>
+	</projects>
+	<buildSpec>
+		<buildCommand>
+			<name>org.eclipse.jdt.core.javabuilder</name>
+			<arguments>
+			</arguments>
+		</buildCommand>
+	</buildSpec>
+	<natures>
+		<nature>org.eclipse.jdt.core.javanature</nature>
+	</natures>
+	<linkedResources>
+		<link>
+			<name>amber-java-hokuyo</name>
+			<type>2</type>
+			<location>C:/Users/szsz/git/amber-java-clients/amber-java-hokuyo</location>
+		</link>
+	</linkedResources>
+</projectDescription>

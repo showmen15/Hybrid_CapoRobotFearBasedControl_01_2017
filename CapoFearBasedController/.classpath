@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.7"/>
+	<classpathentry kind="lib" path="lib/jts-1.13.jar"/>
+	<classpathentry kind="lib" path="lib/rabbitmq-client.jar"/>
+	<classpathentry kind="lib" path="lib/gson-2.3.1.jar"/>
+	<classpathentry kind="lib" path="lib/amber-java-common-1.0-20150428.174226-1.jar"/>
+	<classpathentry kind="lib" path="lib/amber-java-hokuyo-1.0-20150428.174229-1.jar"/>
+	<classpathentry kind="lib" path="lib/amber-java-location-1.0-20150428.174229-1.jar"/>
+	<classpathentry kind="lib" path="lib/amber-java-roboclaw-1.0-20150428.174230-1.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/CapoMazeCommons"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
