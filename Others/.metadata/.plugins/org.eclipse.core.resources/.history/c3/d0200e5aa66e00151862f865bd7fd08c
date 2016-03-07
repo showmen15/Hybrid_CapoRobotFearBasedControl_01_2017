@@ -1,0 +1,52 @@
+package pl.edu.agh.capo.fear.app;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintStream;
+import java.util.concurrent.TimeoutException;
+
+import pl.edu.agh.capo.fear.CapoFearBasedController;
+import pl.edu.agh.capo.fear.SensorLoopMonitorThread;
+
+public class CapoApp
+{
+  public static void main(String[] args)
+    throws Exception
+  {
+	  
+	  System.out.println("\n\n\n Params can be used: robotId \n\n\n");
+	  
+		int defaultRoboId = 2;
+		if (args.length > 0)
+		{	try {
+				defaultRoboId = Integer.parseInt(args[0]);
+			} catch (NumberFormatException e) {
+			}
+		}	
+
+		
+		
+    CapoFearBasedController capoController = new CapoFearBasedController(defaultRoboId, "F:/AGH/LabRobotow/CapoRobot/LokalizacjaJava/CapoMazeHough/res/MazeRoboLabFullMap2.roson");
+    capoController.setDestination(0.3, 6);
+    
+    SensorLoopMonitorThread sensorLoopMonitorThread = new SensorLoopMonitorThread(capoController);
+    
+    Thread monitorThread = new Thread(sensorLoopMonitorThread);
+    capoController.SetMonitorThread(monitorThread);
+    Thread controllerThread = new Thread(capoController);
+    
+    controllerThread.start();
+    monitorThread.start();
+    
+    System.in.read();
+    System.out.println("STOP");
+    sensorLoopMonitorThread.Stop();
+    capoController.Stop();
+    try
+    {
+      controllerThread.join();
+    }
+    catch (InterruptedException localInterruptedException) {}
+    capoController.Stop();
+  }
+}

@@ -1,0 +1,25 @@
+package pl.edu.agh.capo.fear.data;
+
+public class LocationInTime {
+
+	protected Location location;
+	protected double time;
+	
+	public LocationInTime(Location location, double time) {
+		super();
+		this.location = location;
+		this.time = time;
+	}
+
+	public Location getLocation() {
+		return location;
+	}
+
+	public double getTime() {
+		return time;
+	}
+	
+	
+	
+	
+}

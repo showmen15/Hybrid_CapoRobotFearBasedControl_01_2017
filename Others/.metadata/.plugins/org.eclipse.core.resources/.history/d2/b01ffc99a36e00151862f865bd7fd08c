@@ -1,0 +1,37 @@
+package pl.edu.agh.capo.fear.collisions;
+
+import java.util.HashMap;
+
+import pl.edu.agh.capo.fear.communication.StateMessageConsumer;
+import pl.edu.agh.capo.fear.data.Trajectory;
+
+public class RobotTrajectoryCollisionDetector implements CollisionDetector, StateMessageConsumer {
+
+	protected HashMap<Integer, Trajectory> robotsTrajectories = new HashMap<Integer, Trajectory>();
+	protected int skippedRobotId;
+	
+	public RobotTrajectoryCollisionDetector(int skippedRobotId)
+	{
+		this.skippedRobotId = skippedRobotId;
+	}
+	
+    @Override
+	public int getCollidingTrajecotryStepNumber(Trajectory trajectory) 
+    {
+    	int minCollidingStepId = Integer.MAX_VALUE;
+    	for (Trajectory otherTrajectory : robotsTrajectories.values())
+    	{
+    		
+    		
+    	}
+		return -1;
+	}
+
+	@Override
+	public void consumeMessage(Trajectory trajectory) 
+	{
+		if (trajectory.getRobotId() != skippedRobotId)
+			robotsTrajectories.put(trajectory.getRobotId(), trajectory);		
+	}
+
+}

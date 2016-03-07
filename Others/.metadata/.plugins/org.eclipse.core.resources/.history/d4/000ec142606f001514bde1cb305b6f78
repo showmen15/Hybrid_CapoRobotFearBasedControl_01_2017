@@ -1,0 +1,50 @@
+package pl.edu.agh.capo.fear.app;
+
+import com.vividsolutions.jts.math.Vector2D;
+
+import pl.edu.agh.capo.fear.CapoFearBasedController;
+import pl.edu.agh.capo.fear.SensorLoopMonitorThread;
+
+public class CapoApp
+{
+  public static void main(String[] args)
+    throws Exception
+  {
+	  if (args.length != 6)
+      {
+		  System.out.println("\n This will loop CapoFearBasedController between 2 targets:  \n");
+		  System.out.println("\n Params: robotId mazeFilePath target1_x target1_y target2_x target2_y  \n\n\n");
+		  return;
+      }
+	
+//"F:/AGH/LabRobotow/CapoRobot/LokalizacjaJava/CapoMazeHough/res/MazeRoboLabFullMap2.roson"
+    CapoFearBasedController capoController;
+	try {
+		capoController = new CapoFearBasedController(Integer.parseInt(args[0]), args[1]);
+		capoController.setLoopDestinations(new Vector2D(Double.parseDouble(args[2]),Double.parseDouble(args[3])), new Vector2D(Double.parseDouble(args[4]),Double.parseDouble(args[5])));
+	} catch (Exception e) {
+		e.printStackTrace();
+		return;
+	}
+    
+    SensorLoopMonitorThread sensorLoopMonitorThread = new SensorLoopMonitorThread(capoController);
+    
+    Thread monitorThread = new Thread(sensorLoopMonitorThread);
+    capoController.SetMonitorThread(monitorThread);
+    Thread controllerThread = new Thread(capoController);
+    
+    controllerThread.start();
+    monitorThread.start();
+    
+    System.in.read();
+    System.out.println("STOP");
+    sensorLoopMonitorThread.Stop();
+    capoController.Stop();
+    try
+    {
+      controllerThread.join();
+    }
+    catch (InterruptedException localInterruptedException) {}
+    capoController.Stop();
+  }
+}

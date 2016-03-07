@@ -1,0 +1,13 @@
+package pl.edu.agh.capo.fear;
+
+public class MazeCollisionDetector {
+	
+	
+	public MazeCollisionDetector(String mazeRosonFilename)
+	{
+		
+	}
+	
+	
+
+}

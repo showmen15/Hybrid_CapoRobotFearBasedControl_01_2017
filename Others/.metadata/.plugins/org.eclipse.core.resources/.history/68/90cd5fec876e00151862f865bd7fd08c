@@ -1,0 +1,28 @@
+package pl.edu.agh.capo.app;
+
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+
+import pl.edu.agh.capo.fear.communication.StateCollector;
+import pl.edu.agh.capo.maze.MazeMap;
+import pl.edu.agh.capo.ui.CapoMazeVisualizer;
+
+import com.google.gson.Gson;
+
+public class CapoMazeVisualize {
+
+	public static void main(String[] args) {
+
+		Gson gson = new Gson();
+		MazeMap mazeMap = MazeMap.loadMazeFromFile("F:/AGH/LabRobotow/CapoRobot/LokalizacjaJava/CapoMazeHough/res/MazeRoboLabFullMap2.roson");
+		System.out.println("Maze loaded");
+		
+		StateCollector collector = new StateCollector();
+		collector.setConsumer(CapoMazeVisualizer.getInstance());
+
+	    
+		CapoMazeVisualizer.getInstance().open(mazeMap);
+
+	}
+
+}

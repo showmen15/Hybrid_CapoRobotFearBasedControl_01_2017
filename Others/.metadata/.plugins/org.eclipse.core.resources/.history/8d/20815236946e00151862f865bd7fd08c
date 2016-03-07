@@ -1,0 +1,13 @@
+package pl.edu.agh.capo.fear.collisions;
+
+import pl.edu.agh.capo.fear.data.Trajectory;
+
+public class RobotTrajectoryCollisionDetector implements CollisionDetector {
+
+	@Override
+	public int getCollidingTrajecotryStepNumber(Trajectory trajectory) {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+}

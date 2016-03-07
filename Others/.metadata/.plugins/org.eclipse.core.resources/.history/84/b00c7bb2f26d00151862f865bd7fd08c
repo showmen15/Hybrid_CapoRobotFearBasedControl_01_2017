@@ -1,0 +1,8 @@
+package pl.edu.agh.capo.fear.data;
+
+import java.util.ArrayList;
+
+public class Trjectory {
+	ArrayList<LocationInTime> trajectorySteps;
+
+}

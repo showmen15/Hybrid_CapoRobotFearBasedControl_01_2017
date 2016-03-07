@@ -1,0 +1,22 @@
+package pl.edu.agh.capo.fear.data;
+
+import java.util.ArrayList;
+
+public class Trajectory {
+	protected ArrayList<LocationInTime> trajectorySteps;
+	protected Location targetLocation;
+	
+	public Trajectory(Location targetLocation) {
+		super();
+		this.targetLocation = targetLocation;
+		this.trajectorySteps = new ArrayList<LocationInTime>();
+	}
+	
+	public void addTrajectoryStep(LocationInTime locationInTime)
+	{
+		this.trajectorySteps.add(locationInTime);
+	}
+	
+	
+
+}

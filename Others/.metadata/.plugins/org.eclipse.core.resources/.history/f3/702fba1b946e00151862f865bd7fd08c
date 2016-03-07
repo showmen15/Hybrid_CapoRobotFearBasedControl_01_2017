@@ -1,0 +1,8 @@
+package pl.edu.agh.capo.fear;
+
+import pl.edu.agh.capo.fear.data.Trajectory;
+
+public interface CollisionDetector {
+
+	public int getCollidingTrajecotryStepNumber(Trajectory trajectory);
+}

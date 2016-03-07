@@ -1,0 +1,26 @@
+package pl.edu.agh.capo.fear;
+
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+
+import pl.edu.agh.capo.maze.MazeMap;
+
+
+public class MazeCollisionDetector {
+	
+	
+	public MazeCollisionDetector(String mazeRosonFilename)
+	{
+		MazeMap mazeMap;
+		try {
+			mazeMap = MazeMap.loadMazeFromFile(mazeRosonFilename);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return;
+		}
+		
+	}
+	
+	
+
+}

@@ -1,0 +1,17 @@
+package pl.edu.agh.capo.fear.communication;
+
+import com.vividsolutions.jts.math.Vector2D;
+
+import pl.edu.agh.capo.fear.CapoRobotMotionModel;
+import pl.edu.agh.capo.fear.data.Trajectory;
+
+public class StatePublisher {
+
+	
+	public void publishCapoRobotStateAndPlan(CapoRobotMotionModel robotMotionModel, Vector2D destination)
+	{
+		Trajectory trajectory = new Trajectory(destination);
+		
+		
+	}
+}

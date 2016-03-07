@@ -1,0 +1,32 @@
+package pl.edu.agh.capo.fear.data;
+
+import java.util.ArrayList;
+
+public class Trajectory {
+	protected ArrayList<LocationInTime> trajectorySteps;
+	protected Vector2D targetLocation;
+	
+	public Trajectory(Vector2D targetLocation) {
+		super();
+		this.targetLocation = targetLocation;
+		this.trajectorySteps = new ArrayList<LocationInTime>();
+	}
+	
+	public void addTrajectoryStep(LocationInTime locationInTime)
+	{
+		this.trajectorySteps.add(locationInTime);
+	}
+	
+	public Iterable<LocationInTime> getTrajectorySteps()
+	{
+		return this.trajectorySteps;
+	}
+
+	public Vector2D getTargetLocation() {
+		return targetLocation;
+	}
+	
+	
+	
+
+}

@@ -1,0 +1,5 @@
+package pl.edu.agh.capo.fear.communication;
+
+public interface IStateMessageConsumer {
+
+}

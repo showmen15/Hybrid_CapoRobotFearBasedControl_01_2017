@@ -1,0 +1,5 @@
+package pl.edu.agh.capo.fear.data;
+
+public class LocationInTime {
+
+}

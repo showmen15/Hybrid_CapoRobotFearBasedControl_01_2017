@@ -1,0 +1,23 @@
+package pl.edu.agh.capo.fear;
+
+public class CapoRobotMock {
+
+	protected CapoRobotLocation capoRobotLocation;
+	
+	public CapoRobotMock()
+	{
+		this.capoRobotLocation.
+	}
+	
+	
+	public void SetRoboClawVelocity(double currentVelocityLeft,double currentVelocityRight) 
+	{
+		
+		
+	}
+	
+	public 
+
+	
+	
+}

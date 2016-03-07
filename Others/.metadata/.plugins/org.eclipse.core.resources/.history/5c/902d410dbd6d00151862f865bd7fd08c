@@ -1,0 +1,5 @@
+package pl.edu.agh.capo.fear;
+
+public class CapoRobotState {
+	public double robotPositionX, robotPositionY, robotDirection;
+}

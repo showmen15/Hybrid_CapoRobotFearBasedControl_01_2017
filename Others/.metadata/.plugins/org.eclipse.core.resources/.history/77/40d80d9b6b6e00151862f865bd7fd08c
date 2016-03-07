@@ -1,0 +1,7 @@
+package pl.edu.agh.capo.fear.communication;
+
+import pl.edu.agh.capo.fear.data.Trajectory;
+
+public interface IStateMessageConsumer {
+
+}

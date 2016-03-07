@@ -1,0 +1,52 @@
+package pl.edu.agh.capo.fear;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintStream;
+
+public class CapoApp
+{
+  public static void main(String[] args)
+    throws IOException
+  {
+	  
+	  System.out.println("\n\n\n Two params can be used: robotId maxSpeed\n\n\n");
+	  
+		int defaultRoboId = 3;
+		if (args.length > 0)
+		{	try {
+				defaultRoboId = Integer.parseInt(args[0]);
+			} catch (NumberFormatException e) {
+			}
+		}	
+			
+		double defaultMaxSpeed = 1.5D;
+		if (args.length > 1)
+		{	try {
+			defaultMaxSpeed = Double.parseDouble(args[1]);
+			} catch (NumberFormatException e) {
+			}
+		}	
+			
+    CapoController capoController = new CapoController(defaultRoboId, defaultMaxSpeed);
+    SensorLoopMonitorThread sensorLoopMonitorThread = new SensorLoopMonitorThread(capoController);
+    
+    Thread monitorThread = new Thread(sensorLoopMonitorThread);
+    capoController.SetMonitoThread(monitorThread);
+    Thread controllerThread = new Thread(capoController);
+    
+    controllerThread.start();
+    monitorThread.start();
+    
+    System.in.read();
+    System.out.println("STOP");
+    sensorLoopMonitorThread.Stop();
+    capoController.Stop();
+    try
+    {
+      controllerThread.join();
+    }
+    catch (InterruptedException localInterruptedException) {}
+    capoController.Stop();
+  }
+}

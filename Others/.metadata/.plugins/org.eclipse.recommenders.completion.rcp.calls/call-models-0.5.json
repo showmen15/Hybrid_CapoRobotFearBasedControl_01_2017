@@ -1,0 +1,43 @@
+{
+  "C:\\Program Files\\Java\\jre7\\lib\\rt.jar": {
+    "coordinate": "jre:jre:zip:call:1.0.0",
+    "location": "C:\\Program Files\\Java\\jre7\\lib\\rt.jar",
+    "status": "RESOLVED",
+    "error": "No call model found for \u0027C:\\Program Files\\Java\\jre7\\lib\\rt.jar\u0027. Neither fingerprint \u00271fbfeeb3449860cd85925cef06714daa4c8220ca\u0027 nor symbolic name \u0027jre\u0027 are known."
+  },
+  "C:\\Program Files\\Java\\jre1.8.0_60\\lib\\rt.jar": {
+    "coordinate": "jre:jre:zip:call:1.0.0",
+    "location": "C:\\Program Files\\Java\\jre1.8.0_60\\lib\\rt.jar",
+    "status": "RESOLVED"
+  },
+  "F:\\AGH\\LabRobotow\\CapoRobot\\LokalizacjaJava\\CapoFearBasedController\\src": {
+    "location": "F:\\AGH\\LabRobotow\\CapoRobot\\LokalizacjaJava\\CapoFearBasedController\\src",
+    "status": "UNRESOLVED",
+    "error": "No class path info available for \u0027F:\\AGH\\LabRobotow\\CapoRobot\\LokalizacjaJava\\CapoFearBasedController\\src\u0027. Skipped."
+  },
+  "F:\\AGH\\LabRobotow\\CapoRobot\\LokalizacjaJava\\CapoFearBasedController\\lib\\jts-1.13.jar": {
+    "location": "F:\\AGH\\LabRobotow\\CapoRobot\\LokalizacjaJava\\CapoFearBasedController\\lib\\jts-1.13.jar",
+    "status": "UNRESOLVED",
+    "error": "No call model found for \u0027F:\\AGH\\LabRobotow\\CapoRobot\\LokalizacjaJava\\CapoFearBasedController\\lib\\jts-1.13.jar\u0027. Neither fingerprint \u00271d7457bff1a63d8f2b2e0e0961300aa1831d0fb7\u0027 nor symbolic name \u0027jts-1.13\u0027 are known."
+  },
+  "F:\\AGH\\LabRobotow\\CapoRobot\\LokalizacjaJava\\CapoFearBasedController\\lib\\rabbitmq-client.jar": {
+    "location": "F:\\AGH\\LabRobotow\\CapoRobot\\LokalizacjaJava\\CapoFearBasedController\\lib\\rabbitmq-client.jar",
+    "status": "UNRESOLVED",
+    "error": "No call model found for \u0027F:\\AGH\\LabRobotow\\CapoRobot\\LokalizacjaJava\\CapoFearBasedController\\lib\\rabbitmq-client.jar\u0027. Neither fingerprint \u0027ef4f5c5944685f6b5da11d7288117af06b599c31\u0027 nor symbolic name \u0027com.rabbitmq.client\u0027 are known."
+  },
+  "F:\\AGH\\LabRobotow\\CapoRobot\\LokalizacjaJava\\CapoFearBasedVisualizer\\src": {
+    "location": "F:\\AGH\\LabRobotow\\CapoRobot\\LokalizacjaJava\\CapoFearBasedVisualizer\\src",
+    "status": "UNRESOLVED",
+    "error": "No class path info available for \u0027F:\\AGH\\LabRobotow\\CapoRobot\\LokalizacjaJava\\CapoFearBasedVisualizer\\src\u0027. Skipped."
+  },
+  "F:\\AGH\\LabRobotow\\CapoRobot\\LokalizacjaJava\\CapoMazeCommons\\CapoMazeCommons.jar": {
+    "location": "F:\\AGH\\LabRobotow\\CapoRobot\\LokalizacjaJava\\CapoMazeCommons\\CapoMazeCommons.jar",
+    "status": "UNRESOLVED",
+    "error": "No call model found for \u0027F:\\AGH\\LabRobotow\\CapoRobot\\LokalizacjaJava\\CapoMazeCommons\\CapoMazeCommons.jar\u0027. Neither fingerprint \u0027cbcdea932e4f6eef891341c6c88b84b289c8dc6e\u0027 nor symbolic name \u0027CapoMazeCommons\u0027 are known."
+  },
+  "F:\\AGH\\LabRobotow\\CapoRobot\\LokalizacjaJava\\CapoMazeCommons\\src": {
+    "location": "F:\\AGH\\LabRobotow\\CapoRobot\\LokalizacjaJava\\CapoMazeCommons\\src",
+    "status": "UNRESOLVED",
+    "error": "No class path info available for \u0027F:\\AGH\\LabRobotow\\CapoRobot\\LokalizacjaJava\\CapoMazeCommons\\src\u0027. Skipped."
+  }
+}

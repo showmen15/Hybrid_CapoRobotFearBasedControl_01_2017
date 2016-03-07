@@ -1,0 +1,111 @@
+package pl.edu.agh.capo.fear.collisions;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+
+import com.vividsolutions.jts.algorithm.distance.DiscreteHausdorffDistance.MaxDensifiedByFractionDistanceFilter;
+import com.vividsolutions.jts.math.Vector2D;
+
+import pl.edu.agh.capo.fear.CapoSafeTrajectoryGenerator;
+import pl.edu.agh.capo.fear.communication.StateMessageConsumer;
+import pl.edu.agh.capo.fear.data.Location;
+import pl.edu.agh.capo.fear.data.LocationInTime;
+import pl.edu.agh.capo.fear.data.Trajectory;
+import pl.edu.agh.capo.robot.CapoRobotMotionModel;
+
+public class FearBasedRobotTrajectoryCollisionDetector implements CollisionDetector, StateMessageConsumer {
+
+	protected HashMap<Integer, Trajectory> robotsTrajectories = new HashMap<Integer, Trajectory>();
+	protected int thisRobotId;
+	protected double maxObservationDistance;
+	
+	public FearBasedRobotTrajectoryCollisionDetector(int thisRobotId, double maxLinearVelocity)
+	{
+		this.thisRobotId = thisRobotId;
+		this.maxObservationDistance = maxLinearVelocity * CapoSafeTrajectoryGenerator.trajectoryStepCount * CapoSafeTrajectoryGenerator.trajectoryTimeStep;
+	}
+	
+    @Override
+	public int getCollidingTrajecotryStepNumber(Trajectory trajectory) 
+    {
+    	ArrayList<Iterator<LocationInTime>> otherTrajectoriesLocaiontsIterators = getMoreScaryRobotsTrajectories(trajectory);
+    	
+    	int stepId = 1;
+    	Iterator<LocationInTime> thisTrajectoryLocaiontsIterators = trajectory.getTrajectorySteps().iterator();
+    	if (!thisTrajectoryLocaiontsIterators.hasNext())
+    		return -1;
+    	thisTrajectoryLocaiontsIterators.next();    	
+    	while (thisTrajectoryLocaiontsIterators.hasNext())
+    	{
+    		Location thisTrajectoryLocation = thisTrajectoryLocaiontsIterators.next().getLocation();
+    		for (Iterator<LocationInTime> otherTrajectoryLocaiontsIterator : otherTrajectoriesLocaiontsIterators)
+    		{
+    			if (otherTrajectoryLocaiontsIterator.hasNext())	
+    			{
+    				Location otherTrajectoryLocation = otherTrajectoryLocaiontsIterator.next().getLocation();
+    				if (thisTrajectoryLocation.getDistance(otherTrajectoryLocation) < CapoRobotMotionModel.robotDiameter)
+    					return stepId;
+    			}
+    		}    		
+    		stepId++;
+    	}
+		return -1;
+	}
+
+	private ArrayList<Iterator<LocationInTime>> getMoreScaryRobotsTrajectories(Trajectory trajectory) 
+	{
+		ArrayList<Iterator<LocationInTime>> moreScaryTrajectoriesLocaiontsIterators = new ArrayList<Iterator<LocationInTime>>();
+		double thisRobotFearFactor = calculateFearFactor(trajectory.getFirstStepLocation(), thisRobotId);
+		synchronized (robotsTrajectories) 
+		{
+			for (Trajectory otherTrajectory : robotsTrajectories.values())
+			{
+				if (thisRobotFearFactor > calculateFearFactor(otherTrajectory.getFirstStepLocation(), otherTrajectory.getRobotId()))
+					continue;
+				
+				Iterator<LocationInTime> otherTrajectoryLocaiontsIterator = otherTrajectory.getTrajectorySteps().iterator();
+				if (otherTrajectoryLocaiontsIterator.hasNext())
+					otherTrajectoryLocaiontsIterator.next();		// set at second item
+				if (otherTrajectoryLocaiontsIterator.hasNext())	    			
+					moreScaryTrajectoriesLocaiontsIterators.add(otherTrajectoryLocaiontsIterator);
+			}
+		}
+		return moreScaryTrajectoriesLocaiontsIterators;
+	}
+
+	private double calculateFearFactor(Location robotLocation, int robotId) 
+	{
+		double robotFearFactor = 1.0 + 0.01 * (double)robotId;
+		Vector2D robotVersor = new Vector2D(Math.cos(robotLocation.direction), Math.sin(robotLocation.direction));
+		synchronized (robotsTrajectories) 
+		{
+			for (Trajectory otherTrajectory : robotsTrajectories.values())
+			{
+				if (otherTrajectory.getRobotId() == robotId)
+					continue;
+				double angleBetweenRobots = robotVersor.angleTo(new Vector2D(Math.cos(otherTrajectory.getFirstStepLocation().direction), Math.sin(otherTrajectory.getFirstStepLocation().direction)));
+				if (Math.abs(angleBetweenRobots) <  Math.PI/2)
+				{
+					robotFearFactor += ((this.maxObservationDistance - robotLocation.getDistance(otherTrajectory.getFirstStepLocation())) / this.maxObservationDistance)
+							* Math.cos(angleBetweenRobots)
+							* (1.0 + 0.01 * (double)otherTrajectory.getRobotId()
+				}
+			}
+		}
+	
+
+		return robotFearFactor;
+	}
+
+	@Override
+	public void consumeMessage(Trajectory trajectory) 
+	{
+    	synchronized (robotsTrajectories) 
+    	{		
+    		if (trajectory.getRobotId() != thisRobotId)
+    			robotsTrajectories.put(trajectory.getRobotId(), trajectory);		
+    	}
+	}
+
+}

@@ -1,0 +1,49 @@
+package pl.edu.agh.capo.fear;
+
+import pl.edu.agh.capo.fear.data.Location;
+
+public class CapoRobotMock {
+
+	protected CapoRobotMotionModel capoRobotModel;
+	
+	public CapoRobotMock()
+	{
+		this.capoRobotModel = new CapoRobotMotionModel();
+		this.capoRobotModel.setLocation(0.4, 2.3, 0.2);
+		
+		lastMiliseconds = System.currentTimeMillis();
+	}
+	
+	
+	public void SetRoboClawVelocity(double currentVelocityLeft, double currentVelocityRight) 
+	{
+		capoRobotModel.setVelocity(currentVelocityLeft, currentVelocityRight);		
+	}
+	
+	/**
+	 * Simulates scanner reading, blocks for approx 200ms, returns moved robot position
+	 */
+	protected long lastMiliseconds; 
+	public Location GetRobotLocation()
+	{
+		long currentMiliseconds = System.currentTimeMillis();
+		if (currentMiliseconds - lastMiliseconds < 200)
+		{
+			try {
+				Thread.sleep(currentMiliseconds - lastMiliseconds);
+			} catch (InterruptedException e) {
+			}
+		}
+		
+		capoRobotModel.moveRobot(((double)currentMiliseconds - lastMiliseconds)/1000);
+		
+		lastMiliseconds = currentMiliseconds;
+		
+		return capoRobotModel.getLocation();
+	}
+
+
+
+	
+	
+}

@@ -1,0 +1,8 @@
+package pl.edu.agh.capo.fear.data;
+
+public class Snippet {
+	public static void main(String[] args) {
+		robotId
+	}
+}
+

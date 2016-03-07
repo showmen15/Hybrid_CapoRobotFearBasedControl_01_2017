@@ -1,0 +1,25 @@
+package pl.edu.agh.capo.fear.communication;
+
+import com.vividsolutions.jts.math.Vector2D;
+
+import pl.edu.agh.capo.fear.CapoRobotMotionModel;
+import pl.edu.agh.capo.fear.data.Location;
+import pl.edu.agh.capo.fear.data.LocationInTime;
+import pl.edu.agh.capo.fear.data.Trajectory;
+
+public class StatePublisher {
+
+	protected final double trajectoryTimeStep = 0.2;
+	protected final int trajectoryStepCount = 8;
+	
+	public void publishCapoRobotStateAndPlan(CapoRobotMotionModel robotMotionModel, Vector2D destination)
+	{
+		Trajectory trajectory = new Trajectory(destination);
+		for (int i = 0 ; i < trajectoryStepCount ; i ++)
+			trajectory.addTrajectoryStep(new LocationInTime(
+					robotMotionModel.getLocationAfterTime(trajectoryTimeStep*i)	
+					, trajectoryTimeStep*i));
+		
+		
+	}
+}

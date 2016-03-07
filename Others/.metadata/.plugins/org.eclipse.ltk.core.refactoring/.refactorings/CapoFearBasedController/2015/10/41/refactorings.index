@@ -1,0 +1,30 @@
+1444307099578	Rename package 'pl.edu.agh.capo.laserReactiveController'
+1444309398557	Rename type 'CapoRobotLocation'
+1444312268579	Rename type 'CapoRobotMotionModelCalculator'
+1444313242093	Rename type 'CapoRobotState'
+1444313250436	Rename field 'robotPositionX'
+1444313256148	Rename field 'robotPositionY'
+1444313262544	Rename field 'robotDirection'
+1444313772245	Rename method 'CheckFeasibility'
+1444332324193	Move compilation unit
+1444332529130	Rename type 'Trjectory'
+1444332864228	Rename type 'CapoController'
+1444334552901	Rename method 'SetMonitoThread'
+1444336554298	Copy compilation units
+1444383587564	Copy compilation units
+1444389728637	Copy compilation unit
+1444395397631	Copy compilation unit
+1444395758099	Delete element
+1444395762007	Delete element
+1444396114406	Move compilation unit
+1444396161770	Move compilation units
+1444401810437	Move compilation units
+1444409086096	Rename local variable 'robotsTrajectoriesLocaiontsIterators'
+1444487654521	Rename local variable 'defaultRoboId'
+1444490491243	Copy compilation unit
+1444490514463	Rename field 'skippedRobotId'
+1444581260649	Rename local variable 'bestDistance'
+1444581266648	Rename local variable 'trajectoryDistance'
+1444581382853	Rename local variable 'bestDistanceCost'
+1444581395374	Rename local variable 'trajectoryDistanceCost'
+1444581400580	Rename method 'getTrajectoryQuality'

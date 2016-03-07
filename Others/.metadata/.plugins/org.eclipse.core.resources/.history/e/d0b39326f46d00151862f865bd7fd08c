@@ -1,0 +1,25 @@
+package pl.edu.agh.capo.fear.data;
+
+public class LocationInTime {
+
+	protected Vector2D location;
+	protected double time;
+	
+	public LocationInTime(Vector2D location, double time) {
+		super();
+		this.location = location;
+		this.time = time;
+	}
+
+	public Vector2D getLocation() {
+		return location;
+	}
+
+	public double getTime() {
+		return time;
+	}
+	
+	
+	
+	
+}

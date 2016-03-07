@@ -1,0 +1,14 @@
+package pl.edu.agh.capo.fear;
+
+public class CapoRobotMock {
+
+	protected double robotPositionX, robotPositionY, robotDirection;
+	
+	
+	public void SetRoboClawVelocity(double currentVelocityLeft,double currentVelocityRight) {
+		
+	}
+
+	
+	
+}

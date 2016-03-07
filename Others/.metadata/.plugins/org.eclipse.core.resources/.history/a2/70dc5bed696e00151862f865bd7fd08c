@@ -1,0 +1,35 @@
+package pl.edu.agh.capo.fear.data;
+
+import java.io.Serializable;
+import java.util.ArrayList;
+
+import com.vividsolutions.jts.math.Vector2D;
+
+public class Trajectory implements Serializable{
+	protected ArrayList<LocationInTime> trajectorySteps;
+	protected Vector2D targetLocation;
+	
+	public Trajectory(Vector2D targetLocation) {
+		super();
+		this.targetLocation = targetLocation;
+		this.trajectorySteps = new ArrayList<LocationInTime>();
+	}
+	
+	public void addTrajectoryStep(LocationInTime locationInTime)
+	{
+		this.trajectorySteps.add(locationInTime);
+	}
+	
+	public Iterable<LocationInTime> getTrajectorySteps()
+	{
+		return this.trajectorySteps;
+	}
+
+	public Vector2D getTargetLocation() {
+		return targetLocation;
+	}
+	
+	
+	
+
+}

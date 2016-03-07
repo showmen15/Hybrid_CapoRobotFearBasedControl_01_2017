@@ -1,0 +1,29 @@
+package pl.edu.agh.capo.fear;
+
+import java.util.ArrayList;
+
+import com.vividsolutions.jts.geom.LineSegment;
+
+import pl.edu.agh.capo.maze.MazeMap;
+import pl.edu.agh.capo.maze.Wall;
+
+
+public class MazeCollisionDetector {
+	
+	MazeMap mazeMap;
+	ArrayList <LineSegment> wallsLineSegments = new ArrayList<LineSegment>(); 
+			
+	
+	public MazeCollisionDetector(String mazeRosonFilename) throws Exception
+	{
+		mazeMap = MazeMap.loadMazeFromFile(mazeRosonFilename);
+		for (Wall wall : mazeMap.getWalls())
+		{
+			wallsLineSegments.add(new LineSegment(wall.getFrom().getX(),wall.getFrom().getY(),wall.getTo().getX(),wall.getTo().getY()  ));
+		}
+		
+	}
+	
+	
+
+}

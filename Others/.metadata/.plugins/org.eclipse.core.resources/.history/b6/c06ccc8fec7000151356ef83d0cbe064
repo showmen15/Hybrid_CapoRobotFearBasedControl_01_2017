@@ -1,0 +1,32 @@
+package pl.edu.agh.capo.app;
+
+
+
+import pl.edu.agh.capo.fear.communication.StateCollector;
+import pl.edu.agh.capo.maze.MazeMap;
+import pl.edu.agh.capo.ui.CapoMazeVisualizer;
+
+
+
+public class CapoMazeVisualize {
+
+	public static void main(String[] args) {
+
+		MazeMap mazeMap;
+		try {
+			mazeMap = MazeMap.loadMazeFromFile("/CommonResources/MazeRoboLabEmptyMap2.roson");
+		} catch (Exception e) {
+			e.printStackTrace();
+			return;
+		}
+		System.out.println("Maze loaded");
+		
+		StateCollector collector = new StateCollector();
+		collector.setConsumer(CapoMazeVisualizer.getInstance());
+
+	    
+		CapoMazeVisualizer.getInstance().open(mazeMap);
+
+	}
+
+}

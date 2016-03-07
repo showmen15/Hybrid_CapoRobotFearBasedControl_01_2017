@@ -1,0 +1,12 @@
+package pl.edu.agh.capo.fear;
+
+public class Location {
+	public double positionX, positionY, direction;
+
+	public Location(double positionX, double positionY, double direction) {
+		super();
+		this.positionX = positionX;
+		this.positionY = positionY;
+		this.direction = direction;
+	}
+}

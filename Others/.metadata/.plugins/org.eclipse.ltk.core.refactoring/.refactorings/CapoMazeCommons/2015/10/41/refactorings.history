@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Rename type &apos;pl.edu.agh.capo.fear.communication.IStateMessageConsumer&apos; to &apos;StateMessageConsumer&apos;&#x0D;&#x0A;- Original project: &apos;CapoMazeCommons&apos;&#x0D;&#x0A;- Original element: &apos;pl.edu.agh.capo.fear.communication.IStateMessageConsumer&apos;&#x0D;&#x0A;- Renamed element: &apos;pl.edu.agh.capo.fear.communication.StateMessageConsumer&apos;&#x0D;&#x0A;- Update references to refactored element&#x0D;&#x0A;- Update textual occurrences in comments and strings" description="Rename type &apos;IStateMessageConsumer&apos;" flags="589830" id="org.eclipse.jdt.ui.rename.type" input="/src&lt;pl.edu.agh.capo.fear.communication{IStateMessageConsumer.java[IStateMessageConsumer" matchStrategy="1" name="StateMessageConsumer" qualified="false" references="true" similarDeclarations="false" stamp="1444408152778" textual="false" version="1.0"/>
+</session>

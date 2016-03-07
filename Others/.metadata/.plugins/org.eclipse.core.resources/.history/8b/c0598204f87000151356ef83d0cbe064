@@ -1,0 +1,179 @@
+package pl.edu.agh.capo.fear;
+
+import java.io.IOException;
+import java.util.Random;
+import java.util.concurrent.TimeoutException;
+
+import pl.edu.agh.amber.common.AmberClient;
+import pl.edu.agh.amber.hokuyo.HokuyoProxy;
+import pl.edu.agh.amber.roboclaw.RoboclawProxy;
+import pl.edu.agh.capo.fear.collisions.FearBasedRobotTrajectoryCollisionDetector;
+import pl.edu.agh.capo.fear.collisions.MazeCollisionDetector;
+import pl.edu.agh.capo.fear.collisions.RobotTrajectoryCollisionDetector;
+import pl.edu.agh.capo.fear.communication.StateCollector;
+import pl.edu.agh.capo.fear.communication.StatePublisher;
+import pl.edu.agh.capo.fear.data.LocationInTime;
+import pl.edu.agh.capo.fear.data.Trajectory;
+import pl.edu.agh.capo.robot.CapoRobotMock;
+import pl.edu.agh.capo.robot.CapoRobotMotionModel;
+
+import com.vividsolutions.jts.math.Vector2D;
+
+
+
+public class CapoFearBasedController
+implements Runnable
+{
+	
+
+
+	protected AmberClient client;
+	protected RoboclawProxy roboclawProxy;
+	protected HokuyoProxy hokuyoProxy;
+	protected CapoRobotMock capoRobotMock;
+
+	protected Thread monitorThread;
+	
+	protected CapoRobotMotionModel capoRobotMotionModel;
+	protected StatePublisher statePublisher;
+	
+	protected CapoSafeTrajectoryGenerator capoSafeTrajectoryGenerator;
+	
+	protected Vector2D destination = null, nextDestination = null;
+	protected int robotId;
+	
+	public void SetMonitorThread(Thread monitorThread)
+	{
+		this.monitorThread = monitorThread;
+	}
+
+	public CapoFearBasedController(int robotId, double maxLinearVelocity, String mazeRosonFilename)
+			throws Exception
+	{
+		this.robotId = robotId;
+
+		
+//		this.client = new AmberClient("192.168.2."+(200+robotId), 26233);
+//		this.roboclawProxy = new RoboclawProxy(this.client, 0);
+//		this.hokuyoProxy = new HokuyoProxy(this.client, 0);
+		
+		this.capoRobotMock = new CapoRobotMock(maxLinearVelocity);
+		
+		
+		this.statePublisher = new StatePublisher();
+
+		this.capoRobotMotionModel = new CapoRobotMotionModel(maxLinearVelocity);
+		
+		this.capoSafeTrajectoryGenerator = new CapoSafeTrajectoryGenerator();
+		this.capoSafeTrajectoryGenerator.addColisionDetector(new MazeCollisionDetector(mazeRosonFilename));
+//		RobotTrajectoryCollisionDetector robotTrajectoryCollisionDetector = new RobotTrajectoryCollisionDetector(robotId);
+		FearBasedRobotTrajectoryCollisionDetector robotTrajectoryCollisionDetector = new FearBasedRobotTrajectoryCollisionDetector(robotId, maxLinearVelocity);
+		this.capoSafeTrajectoryGenerator.addColisionDetector(robotTrajectoryCollisionDetector);
+		
+		StateCollector stateCollector = new StateCollector();
+		stateCollector.setConsumer(robotTrajectoryCollisionDetector);		
+		
+
+	}
+	
+	public void setDestination(Vector2D destination)
+	{
+		this.destination = destination;
+	}
+
+	public void setLoopDestinations(Vector2D destination, Vector2D nextDestination)
+	{
+		this.destination = destination;
+		this.nextDestination = nextDestination;		
+	}
+
+	protected boolean isRun = true;
+	public void Stop()
+	{
+		this.isRun = false;
+		capoRobotMock.SetRoboClawVelocity(0.0D, 0.0D);
+		this.statePublisher.close();
+	}
+	protected boolean isPaused = false;
+	public void togglePaused() {
+		this.isPaused = !this.isPaused;
+	}
+
+	public void run()
+	{
+
+		while (this.isRun)
+		{
+			this.capoRobotMotionModel.setLocation(capoRobotMock.GetRobotLocation());
+			double destinationDistance = destination.distance(this.capoRobotMotionModel.getLocation().getPositionVector());
+			if (destinationDistance < CapoRobotMotionModel.wheelsHalfDistance)
+			{	//reached target 
+				this.capoRobotMotionModel.setVelocity(0, 0);
+				setLoopDestinations(nextDestination, destination);
+			}
+			if (this.isPaused)
+			{
+				this.capoRobotMotionModel.setVelocity(0, 0);
+			}
+			else
+			{
+				Vector2D robotVersor = capoRobotMotionModel.getVersor();
+				Vector2D targetVector = destination.subtract(this.capoRobotMotionModel.getLocation().getPositionVector());
+				double angleToTarget = robotVersor.angleTo(targetVector);
+				
+				this.capoRobotMotionModel.setVelocity_LinearVelocity_AngularVelocity(
+						Math.cos(angleToTarget/2) * Math.min(1,destinationDistance) * this.capoRobotMotionModel.getMaxLinearVelocity()/2, 
+						2*angleToTarget);	
+				
+				
+			}			
+			Trajectory trajectory = this.capoSafeTrajectoryGenerator.getSafeTrajectory(this.capoRobotMotionModel,destination);
+			trajectory.setRobotId(robotId);
+			
+			System.out.println("Run loop: location=("+this.capoRobotMotionModel.getLocation().positionX+"; "+this.capoRobotMotionModel.getLocation().positionY+"; "+this.capoRobotMotionModel.getLocation().direction+")"+
+								";  velocity=("+this.capoRobotMotionModel.getVelocityLeft()+"; "+this.capoRobotMotionModel.getVelocityRight()+") ");
+			
+			this.monitorThread.interrupt();
+			capoRobotMock.SetRoboClawVelocity(this.capoRobotMotionModel.getVelocityLeft(), this.capoRobotMotionModel.getVelocityRight());
+			
+
+			
+			statePublisher.publishCapoRobotStateAndPlan(trajectory);
+			
+		
+			
+			
+		}
+	}
+
+	public void reduceSpeedDueToSensorRedingTimeout()
+	{
+		System.out.print("-> reduceSpeedDueToSensorRedingTimeou  ");
+		capoRobotMock.SetRoboClawVelocity(this.capoRobotMotionModel.getVelocityLeft() / 2.0D, this.capoRobotMotionModel.getVelocityRight() / 2.0D);
+	}
+ 
+//	protected synchronized void SetRoboClawVelocity(double vLeft, double vRight)
+//	{
+//		if ( Math.abs(this.currentVelocityLeft - vRight) < Math.abs(this.currentVelocityLeft / 8) 
+//				&& 
+//				Math.abs(this.currentVelocityRight - vRight) < Math.abs(this.currentVelocityRight / 8) )
+//		{
+//			System.out.println("At: " + System.currentTimeMillis() + " SKIPPING SMALL CHANGE ");
+//			return;
+//		}
+//			
+//		
+//		this.currentVelocityLeft = vLeft;
+//		this.currentVelocityRight = vRight;
+//this.capoRobotMotionModel.setVelocity(vLeft, vRight);
+//		System.out.println("At: " + System.currentTimeMillis() + " set velocity from tread " + Thread.currentThread().getId() + ": left=" + vLeft + "; right=" + vRight);
+//		try
+//		{
+//			this.roboclawProxy.sendMotorsCommand((int)(vLeft * 1000.0D), (int)(vRight * 1000.0D), (int)(vLeft * 1000.0D), (int)(vRight * 1000.0D));
+//		}
+//		catch (Exception e)
+//		{
+//			System.out.println("Exception in roboclawProxy.sendMotorsCommand: " + e.getMessage());
+//		}
+//	}
+}
