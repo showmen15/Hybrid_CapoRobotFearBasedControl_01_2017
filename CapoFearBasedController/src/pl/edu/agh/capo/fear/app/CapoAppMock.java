@@ -11,7 +11,7 @@ public class CapoAppMock
 	public static void main(String[] args) throws Exception
 	{
 		System.out.println("\n This will loop CapoFearBasedController between 2 targets \n");
-		if (args.length != 10)
+		if (args.length != 11)
 		{
 			System.out.println("\n Params: robotId maxVelocity mazeFilePath target1_x target1_y target2_x target2_y start1_x start1_y start1_anagle  \n\n\n");
 			return;
@@ -22,7 +22,7 @@ public class CapoAppMock
 		CapoFearBasedControllerMock capoController;
 		try
 		{
-			capoController = new CapoFearBasedControllerMock(Integer.parseInt(args[0]), Double.parseDouble(args[1]), args[2], Double.parseDouble(args[7]), Double.parseDouble(args[8]), Double.parseDouble(args[9]));
+			capoController = new CapoFearBasedControllerMock(Integer.parseInt(args[0]), Double.parseDouble(args[1]), args[2], Double.parseDouble(args[7]), Double.parseDouble(args[8]), Double.parseDouble(args[9]), Integer.parseInt(args[10]));
 			capoController.setLoopDestinations(new Vector2D(Double.parseDouble(args[3]), Double.parseDouble(args[4])), new Vector2D(Double.parseDouble(args[5]), Double.parseDouble(args[6])));
 		}
 		catch (Exception e)

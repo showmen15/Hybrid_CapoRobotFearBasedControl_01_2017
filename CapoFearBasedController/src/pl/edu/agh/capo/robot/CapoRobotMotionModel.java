@@ -8,7 +8,7 @@ public class CapoRobotMotionModel
 {
 
 	public static final double wheelsHalfDistance = 0.14;
-	public static final double robotDiameter = 0.5;;
+	public static final double robotDiameter = 0.3; // 0.5
 	public static final double robotHalfDiameter = robotDiameter / 2;
 
 	protected static final double verySmallDouble = 0.0001; // nedded in some
@@ -176,9 +176,7 @@ public class CapoRobotMotionModel
 	// / <returns>true, if the order is physically feasible</returns>
 	public boolean setVelocity_LinearVelocity_AngularVelocity(double linearVelocity, double angularVelocity)
 	{
-		
-	
-		
+
 		if (Math.abs(linearVelocity) < verySmallDouble)
 		{
 			return setVelocity_TurnAround(angularVelocity);
@@ -192,7 +190,7 @@ public class CapoRobotMotionModel
 			// wheelsHalfDistance) / linearVelocity));
 			velocityRight = linearVelocity - angularVelocity * wheelsHalfDistance;
 		}
-	
+
 		return checkFeasibility();
 	}
 
@@ -210,7 +208,7 @@ public class CapoRobotMotionModel
 			// velocityRight = linearVelocity * (1 - ((angularVelocity *
 			// wheelsHalfDistance) / linearVelocity));
 			velocityRight = linearVelocity - angularVelocity;
-			
+
 		}
 		return checkFeasibility();
 	}

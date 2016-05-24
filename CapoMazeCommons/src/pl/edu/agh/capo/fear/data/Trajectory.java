@@ -45,6 +45,11 @@ public class Trajectory implements Serializable
 		return this.trajectorySteps;
 	}
 
+	public LocationInTime getLocationInTime(int index)
+	{
+		return this.trajectorySteps.get(index);
+	}
+
 	public Location getTargetLocation()
 	{
 		return targetLocation;

@@ -6,6 +6,8 @@ import java.util.Random;
 import com.vividsolutions.jts.math.Vector2D;
 
 import pl.edu.agh.capo.fear.collisions.CollisionDetector;
+import pl.edu.agh.capo.fear.collisions.FearBasedRobotTrajectoryCollisionDetector;
+import pl.edu.agh.capo.fear.communication.StatePublisher;
 import pl.edu.agh.capo.fear.data.LocationInTime;
 import pl.edu.agh.capo.fear.data.Trajectory;
 import pl.edu.agh.capo.robot.CapoRobotMotionModel;
@@ -23,8 +25,15 @@ public class CapoSafeTrajectoryGenerator
 
 	protected double lastBestVelocityLeft = 0, lastBestVelocityRight = 0;
 
+	double timeEsc;
+
+	int tooClose = 0;
+
+	int iDeadlockCount = 0;
+
 	public CapoSafeTrajectoryGenerator()
 	{
+
 	}
 
 	public void addColisionDetector(CollisionDetector collisionDetector)
@@ -44,6 +53,360 @@ public class CapoSafeTrajectoryGenerator
 	// return null;
 	// }
 
+	public Trajectory getSafeTrajectoryNewNew(CapoRobotMotionModel motionModel, Vector2D destination, StatePublisher statePublisher)
+	{
+		Trajectory trajectory = buildTrajectory(motionModel, destination);
+
+		// if (getTrajectoryCost(trajectory, destination) > 0)
+		// {
+		// iDeadlockCount = 0;
+		// return trajectory;
+		// }
+
+		ArrayList<Trajectory> robotsTrajectory = GetRobotsTrajectoryWithoutCurrent();
+		double currentRobotFF = CaluclateCurrentRobotTrajectory(trajectory);
+		trajectory.setFearFactor(currentRobotFF);
+
+		// ArrayList<Trajectory> robotCloseToMeSmallerFF =
+		// getRobotsWithSmallerFF(trajectory, robotsTrajectory);
+		//
+		// if (robotCloseToMeSmallerFF.size() > 0)
+		// iDeadlockCount++;
+		// else
+		// iDeadlockCount = 0;
+		//
+		// if (iDeadlockCount >= 5)
+		// {
+		// motionModel.setVelocity(0, 0);
+		// trajectory = buildTrajectory(motionModel, destination);
+		// trajectory.setFearFactor(0); // getMinFF(robotCloseToMeSmallerFF) -
+		// // 0.1);
+		// }
+		// else
+		// {
+		ArrayList<Trajectory> robotCloseToMeBiggerFF = getRobotsWithBiggerFF(trajectory, robotsTrajectory);
+
+		if (robotCloseToMeBiggerFF.size() > 0)
+		{
+			trajectory = getBestTrajectory(trajectory, motionModel, destination, robotCloseToMeBiggerFF);
+
+			// if (trajectory == null)
+			// {
+			// motionModel.setVelocity(0, 0);
+			// trajectory = buildTrajectory(motionModel, destination);
+			// trajectory.setFearFactor(getMinFF(robotCloseToMeSmallerFF) -
+			// 0.1);
+			// }
+			// }
+		}
+
+		trajectory.setFearFactor(currentRobotFF);
+		return trajectory;
+	}
+
+	private Trajectory getBestTrajectory(Trajectory trajectoryPrev, CapoRobotMotionModel motionModel, Vector2D destination, ArrayList<Trajectory> robotsTrajectory)
+	{
+		Trajectory trajectory;
+
+		double bestTrajectoryCost = Double.MAX_VALUE;
+		double bestVelocityLeft = 0, bestVelocityRight = 0;
+		Trajectory bestTrajectory = null;
+
+		// //////// restore last best
+		motionModel.setVelocity(lastBestVelocityLeft, lastBestVelocityRight);
+		trajectory = buildTrajectory(motionModel, destination);
+		double trajectoryCost = getTrajectoryCost(trajectory, destination);
+
+		if (trajectoryCost > 0)
+		{
+			bestVelocityLeft = lastBestVelocityLeft;
+			bestVelocityRight = lastBestVelocityRight;
+			bestTrajectoryCost = trajectoryCost;
+			bestTrajectory = trajectory;
+		}
+
+		double angle = -Math.PI;
+		double step = (2 * Math.PI) / alternativeTrajectoriesTested;
+
+		// //////// try find better
+		for (int timeout = alternativeTrajectoriesTested; timeout > 0; timeout--)
+		{
+			motionModel.setVelocity_LinearVelocity_AngularVelocity(motionModel.getMaxLinearVelocity(), angle);
+
+			trajectory = buildTrajectory(motionModel, destination);
+			trajectoryCost = getTrajectoryCost(trajectory, destination);
+
+			if (trajectoryCost > 0 && trajectoryCost < bestTrajectoryCost)
+			{
+				bestVelocityLeft = motionModel.getVelocityLeft();
+				bestVelocityRight = motionModel.getVelocityRight();
+				bestTrajectoryCost = trajectoryCost;
+				bestTrajectory = trajectory;
+			}
+
+			motionModel.setVelocity_LinearVelocity_AngularVelocity(-motionModel.getMaxLinearVelocity(), angle);
+
+			trajectory = buildTrajectory(motionModel, destination);
+			trajectoryCost = getTrajectoryCost(trajectory, destination);
+
+			if (trajectoryCost > 0 && trajectoryCost < bestTrajectoryCost)
+			{
+				bestVelocityLeft = motionModel.getVelocityLeft();
+				bestVelocityRight = motionModel.getVelocityRight();
+				bestTrajectoryCost = trajectoryCost;
+				bestTrajectory = trajectory;
+			}
+
+			angle += step;
+
+			// // both directions:
+			// 1.6 * motionModel.getMaxLinearVelocity() * (random.nextDouble() -
+			// 0.5),
+			// // 0.8 * motionModel.getMaxLinearVelocity() *
+			// // random.nextDouble(),
+			// 3 * Math.PI * (random.nextDouble() - 0.5));
+		}
+
+		if (bestTrajectoryCost < Double.MAX_VALUE)
+		{
+			motionModel.setVelocity(bestVelocityLeft, bestVelocityRight);
+			lastBestVelocityLeft = bestVelocityLeft;
+			lastBestVelocityRight = bestVelocityRight;
+			return bestTrajectory;
+		}
+		else
+		{
+			motionModel.setVelocity(0, 0);
+			return buildTrajectory(motionModel, destination); // 'stop'
+			// trajectory
+		}
+
+		// Trajectory bestTrajectory = trajectoryPrev;
+		// double bestTrajectoryCost = getTrajectoryCostNew(trajectoryPrev,
+		// destination, robotsTrajectory);
+		// double trajectoryCost = -1;
+		// Trajectory trajectory;
+		//
+		// for (int timeout = alternativeTrajectoriesTested; timeout > 0;
+		// timeout--)
+		// {
+		// motionModel.setVelocity_LinearVelocity_AngularVelocity(
+		// // both directions:
+		// 1.6 * motionModel.getMaxLinearVelocity() * (random.nextDouble() -
+		// 0.5),
+		// // 0.8 * motionModel.getMaxLinearVelocity() *
+		// // random.nextDouble(),
+		// 3 * Math.PI * (random.nextDouble() - 0.5));
+		//
+		// trajectory = buildTrajectory(motionModel, destination);
+		// trajectoryCost = getTrajectoryCostNew(trajectory, destination,
+		// robotsTrajectory);
+		//
+		// if (trajectoryCost > bestTrajectoryCost)
+		// {
+		// bestTrajectoryCost = trajectoryCost;
+		// bestTrajectory = trajectory;
+		// }
+		// }
+		//
+		// return bestTrajectory;
+	}
+
+	private double getTrajectoryCostNew(Trajectory trajectory, Vector2D destination, ArrayList<Trajectory> robotsTrajectory)
+	{
+		double iPos = 0;
+		int index = 0;
+
+		for (LocationInTime locTrajecory : trajectory.getTrajectorySteps())
+		{
+			for (Trajectory traj2 : robotsTrajectory)
+			{
+				if (locTrajecory.getLocation().getDistance(traj2.getLocationInTime(index).getLocation()) < 0.3)
+					return iPos;
+			}
+
+			iPos++;
+			index++;
+		}
+
+		return iPos;
+	}
+
+	private ArrayList<Trajectory> getRobotsWithBiggerFF(Trajectory currentTrajectory, ArrayList<Trajectory> robotsTrajectory)
+	{
+		ArrayList<Trajectory> colision = new ArrayList<Trajectory>();
+
+		for (Trajectory trajectory : robotsTrajectory)
+		{
+			if (trajectory.getFearFactor() > currentTrajectory.getFearFactor())
+			{
+				if (currentTrajectory.getFirstStepLocation().getDistance(trajectory.getFirstStepLocation()) < 0.9)
+					colision.add(trajectory);
+			}
+		}
+
+		return colision;
+	}
+
+	private double getMinFF(ArrayList<Trajectory> robotCloseToMeSmallerFF)
+	{
+		double tempFF = Double.MAX_VALUE;
+
+		for (Trajectory trajectory : robotCloseToMeSmallerFF)
+			tempFF = Math.min(tempFF, trajectory.getFearFactor());
+
+		return tempFF;
+	}
+
+	private ArrayList<Trajectory> getRobotsWithSmallerFF(Trajectory currentTrajectory, ArrayList<Trajectory> robotsTrajectory)
+	{
+		ArrayList<Trajectory> colision = new ArrayList<Trajectory>();
+
+		for (Trajectory trajectory : robotsTrajectory)
+		{
+			if (trajectory.getFearFactor() < currentTrajectory.getFearFactor())
+			{
+				if (currentTrajectory.getFirstStepLocation().getDistance(trajectory.getFirstStepLocation()) < 0.7)
+					colision.add(trajectory);
+			}
+		}
+
+		return colision;
+	}
+
+	private ArrayList<Trajectory> GetRobotsTrajectoryWithoutCurrent()
+	{
+		for (CollisionDetector collisionDetector : collisionDetectors)
+			if (collisionDetector instanceof FearBasedRobotTrajectoryCollisionDetector)
+				return ((FearBasedRobotTrajectoryCollisionDetector) collisionDetector).GetRobotsTrajectoryWithoutCurrentRobot();
+
+		return null;
+	}
+
+	public double CaluclateCurrentRobotTrajectory(Trajectory trajectory)
+	{
+		for (CollisionDetector collisionDetector : collisionDetectors)
+			if (collisionDetector instanceof FearBasedRobotTrajectoryCollisionDetector)
+				return ((FearBasedRobotTrajectoryCollisionDetector) collisionDetector).CaluclateCurrentRobotTrajectory(trajectory);
+
+		return 0;
+	}
+
+	public Trajectory getSafeTrajectoryNew(CapoRobotMotionModel motionModel, Vector2D destination, StatePublisher statePublisher, int robotID)
+	{
+		Trajectory trajectory = buildTrajectory(motionModel, destination);
+
+		ArrayList<Trajectory> robotsTajectory = getTrajectoryRobots(trajectory);
+
+		if (robotSmallerWSblocking(robotsTajectory, robotID) > 0)
+		{
+			motionModel.setVelocity(0, 0);
+			return buildTrajectory(motionModel, destination); // 'stop'
+		}
+		else
+		{
+			if (robotBiggerWStoClose(robotsTajectory, robotID) > 0)
+			{
+				motionModel.setVelocity_LinearVelocity_AngularVelocity(
+				// both directions:
+				1.6 * motionModel.getMaxLinearVelocity() * (random.nextDouble() - 0.5),
+				// 0.8 * motionModel.getMaxLinearVelocity() *
+				// random.nextDouble(),
+				3 * Math.PI * (random.nextDouble() - 0.5));
+
+				// lastBestVelocityLeft = motionModel.getVelocityLeft();
+				// lastBestVelocityRight = motionModel.getVelocityRight();
+
+				trajectory = buildTrajectory(motionModel, destination);
+				return trajectory;
+			}
+			else
+			{
+				return trajectory;
+			}
+		}
+	}
+
+	private int robotSmallerWSblocking(ArrayList<Trajectory> robotsTajectory, int robotID)
+	{
+		ArrayList<Trajectory> robotsTajectorySmaller = new ArrayList<Trajectory>();
+		Trajectory currentRobotTrajecory = robotsTajectory.get(0);
+
+		for (Trajectory trj : robotsTajectory)
+		{
+			if (trj.getRobotId() == robotID)
+				continue;
+			else
+				if (trj.getFearFactor() < currentRobotTrajecory.getFearFactor())
+					robotsTajectorySmaller.add(trj);
+		}
+
+		for (Trajectory smaller : robotsTajectorySmaller)
+		{
+			if (currentRobotTrajecory.getFirstStepLocation().getDistance(smaller.getFirstStepLocation()) < 0.5)
+				return 1;
+		}
+
+		return -1;
+	}
+
+	private int robotBiggerWStoClose(ArrayList<Trajectory> robotsTajectory, int robotID)
+	{
+		ArrayList<Trajectory> robotsTajectoryBigger = new ArrayList<Trajectory>();
+		Trajectory currentRobotTrajecory = robotsTajectory.get(0);
+
+		for (Trajectory trj : robotsTajectory)
+		{
+			if (trj.getRobotId() == robotID)
+				continue;
+			else
+				if (trj.getFearFactor() > currentRobotTrajecory.getFearFactor())
+					robotsTajectoryBigger.add(trj);
+		}
+
+		for (Trajectory bigger : robotsTajectoryBigger)
+		{
+			if (currentRobotTrajecory.getFirstStepLocation().getDistance(bigger.getFirstStepLocation()) < 0.9)
+				return 1;
+		}
+
+		return -1;
+	}
+
+	// ArrayList<Trajectory> robotsColisionTrajectory =
+	// getColisionTajecorySmallerWS(robotsTajectory);
+	//
+	// colisionTrajectorys = getColisionTrajectoryRobots(trajectory);
+	//
+	// if (colisionTrajectorys.size() > 0)
+	// {
+	// // mamy potencjalna kolizje z ktoryms z robotow cos trzeba z tym
+	// // zrobic
+	//
+	// // sprawdzenie czy mamy kolizje z robotem o mniejszym WS
+	// if (existColisionTrajectoryWithSmallerWSrobot(trajectory,
+	// colisionTrajectorys))
+	// {
+	//
+	// }
+	// }
+	// private ArrayList<Trajectory>
+	// getColisionTajecorySmallerWS(ArrayList<Trajectory> trajecorys)
+	// {
+	//
+	// }
+	//
+	// private Boolean existColisionTrajectoryWithSmallerWSrobot(Trajectory
+	// trajectory, ArrayList<Trajectory> colisionTrajectorys)
+	// {
+	// for (Trajectory trajectory : colisionTrajectorys)
+	// {
+	// if(trajectory )
+	// }
+	//
+	// return false;
+	// }
+
 	/**
 	 * 
 	 * @param motionModel
@@ -54,11 +417,28 @@ public class CapoSafeTrajectoryGenerator
 	 *         to the destination.
 	 * 
 	 */
-	public Trajectory getSafeTrajectory(CapoRobotMotionModel motionModel, Vector2D destination)
+	public Trajectory getSafeTrajectory(CapoRobotMotionModel motionModel, Vector2D destination, StatePublisher statePublisher)
 	{
 		Trajectory trajectory = buildTrajectory(motionModel, destination);
 
-		if (getTrajectoryCost(trajectory, destination) > 0) // given is safe
+		// ArrayList<Trajectory> robotsTrajectory =
+		// GetRobotsTrajectoryWithoutCurrent();
+		// double currentRobotFF = CaluclateCurrentRobotTrajectory(trajectory);
+		// trajectory.setFearFactor(currentRobotFF);
+		//
+		// ArrayList<Trajectory> robotCloseToMeSmallerFF =
+		// getRobotsWithSmallerFF(trajectory, robotsTrajectory);
+		//
+		// if (robotCloseToMeSmallerFF.size() > 0)
+		// {
+		// motionModel.setVelocity(0, 0);
+		// trajectory = buildTrajectory(motionModel, destination);
+		// trajectory.setFearFactor(getMinFF(robotCloseToMeSmallerFF) - 0.1);
+		// return trajectory;
+		// }
+		// else
+		// {
+		if (getTrajectoryCost(trajectory, destination) > 0)
 			return trajectory;
 
 		double bestTrajectoryCost = Double.MAX_VALUE;
@@ -69,6 +449,7 @@ public class CapoSafeTrajectoryGenerator
 		motionModel.setVelocity(lastBestVelocityLeft, lastBestVelocityRight);
 		trajectory = buildTrajectory(motionModel, destination);
 		double trajectoryCost = getTrajectoryCost(trajectory, destination);
+
 		if (trajectoryCost > 0)
 		{
 			bestVelocityLeft = lastBestVelocityLeft;
@@ -83,11 +464,18 @@ public class CapoSafeTrajectoryGenerator
 			motionModel.setVelocity_LinearVelocity_AngularVelocity(
 			// both directions:
 			1.6 * motionModel.getMaxLinearVelocity() * (random.nextDouble() - 0.5),
-			// 0.8 * motionModel.getMaxLinearVelocity() * random.nextDouble(),
+			// 0.8 * motionModel.getMaxLinearVelocity() *
+			// random.nextDouble(),
 			3 * Math.PI * (random.nextDouble() - 0.5));
 
 			trajectory = buildTrajectory(motionModel, destination);
 			trajectoryCost = getTrajectoryCost(trajectory, destination);
+
+			// trajectory.setRobotId(0);
+			// statePublisher.publishCapoRobotStateAndPlan(trajectory);
+			//
+			// System.out.print("Cost:" + trajectoryCost + "\n");
+
 			if (trajectoryCost > 0 && trajectoryCost < bestTrajectoryCost)
 			{
 				bestVelocityLeft = motionModel.getVelocityLeft();
@@ -105,12 +493,112 @@ public class CapoSafeTrajectoryGenerator
 			return bestTrajectory;
 		}
 		else
-		{			
+		{
+			motionModel.setVelocity(0, 0);
+			return buildTrajectory(motionModel, destination); // 'stop'
+			// trajectory
+		}
+		// }
+		// }
+	}
+
+	private int robotToClose(Trajectory trajectory)
+	{
+		return getMinWSBlocingRobot(trajectory);
+	}
+
+	public Trajectory getMinWSBlocingRobotTrajectory(Trajectory trajectory)
+	{
+		for (CollisionDetector collisionDetector : collisionDetectors)
+			if (collisionDetector instanceof FearBasedRobotTrajectoryCollisionDetector)
+				return ((FearBasedRobotTrajectoryCollisionDetector) collisionDetector).getBlocingRobotTrajectory(trajectory);
+
+		return null;
+	}
+
+	public ArrayList<Trajectory> getTrajectoryRobots(Trajectory currentTrajectory)
+	{
+		for (CollisionDetector collisionDetector : collisionDetectors)
+			if (collisionDetector instanceof FearBasedRobotTrajectoryCollisionDetector)
+				return ((FearBasedRobotTrajectoryCollisionDetector) collisionDetector).getTrajectoryRobots(currentTrajectory);
+
+		return null;
+	}
+
+	public Trajectory getSafeTrajectoryTEST(CapoRobotMotionModel motionModel, Vector2D destination, StatePublisher statePublisher)
+	{
+		Trajectory trajectory = null;
+		double bestTrajectoryCost = Double.MAX_VALUE;
+		double bestVelocityLeft = 0, bestVelocityRight = 0;
+		double trajectoryCost = 0;
+		Trajectory bestTrajectory = null;
+
+		// trajectory = buildTrajectory(motionModel, destination);
+		//
+		// if (getTrajectoryCost(trajectory, destination) > 0) // given is safe
+		// return trajectory;
+
+		// //////// restore last best
+		// motionModel.setVelocity(lastBestVelocityLeft, lastBestVelocityRight);
+		// trajectory = buildTrajectory(motionModel, destination);
+		// trajectoryCost = getTrajectoryCost(trajectory, destination);
+		//
+		// if (trajectoryCost > 0)
+		// {
+		// bestVelocityLeft = lastBestVelocityLeft;
+		// bestVelocityRight = lastBestVelocityRight;
+		// bestTrajectoryCost = trajectoryCost;
+		// bestTrajectory = trajectory;
+		// }
+
+		// //////// try find better
+		for (int timeout = alternativeTrajectoriesTested; timeout > 0; timeout--)
+		{
+			motionModel.setVelocity_LinearVelocity_AngularVelocity(
+			// both directions:
+			1.6 * motionModel.getMaxLinearVelocity() * (random.nextDouble() - 0.5),
+			// 0.8 * motionModel.getMaxLinearVelocity() * random.nextDouble(),
+			3 * Math.PI * (random.nextDouble() - 0.5));
+
+			trajectory = buildTrajectory(motionModel, destination);
+			trajectoryCost = getTrajectoryCost(trajectory, destination);
+
+			statePublisher.publishCapoRobotStateAndPlan(trajectory);
+
+			System.out.print("Cost:" + trajectoryCost + "\n");
+
+			if (trajectoryCost > 0 && trajectoryCost < bestTrajectoryCost)
+			{
+				bestVelocityLeft = motionModel.getVelocityLeft();
+				bestVelocityRight = motionModel.getVelocityRight();
+				bestTrajectoryCost = trajectoryCost;
+				bestTrajectory = trajectory;
+			}
+
+		}
+
+		if (bestTrajectoryCost < Double.MAX_VALUE)
+		{
+			motionModel.setVelocity(bestVelocityLeft, bestVelocityRight);
+			lastBestVelocityLeft = bestVelocityLeft;
+
+			return bestTrajectory;
+		}
+		else
+		{
 			motionModel.setVelocity(0, 0);
 			return buildTrajectory(motionModel, destination); // 'stop'
 																// trajectory
 		}
+	}
 
+	public int getMinWSBlocingRobot(Trajectory trajectory)
+	{
+		for (CollisionDetector collisionDetector : collisionDetectors)
+			if (collisionDetector instanceof FearBasedRobotTrajectoryCollisionDetector)
+				return ((FearBasedRobotTrajectoryCollisionDetector) collisionDetector).getBlocingRobotWSSmaller(trajectory);
+
+		return -1;
 	}
 
 	/**
@@ -127,6 +615,19 @@ public class CapoSafeTrajectoryGenerator
 
 		return trajectory.getLastStepLocation().getPositionVector().distance(destination);
 	}
+
+	// private double getTrajectoryCostNewNEW(Trajectory trajectory, Vector2D
+	// destination)
+	// {
+	// for (CollisionDetector collisionDetector : collisionDetectors)
+	// if
+	// (collisionDetector.getCollidingTrajecotryMinStepNumberNewNew(trajectory)
+	// >= 0)
+	// return -1;
+	//
+	// return
+	// trajectory.getLastStepLocation().getPositionVector().distance(destination);
+	// }
 
 	/**
 	 * Just generates steps of the trajectory by given motionModel

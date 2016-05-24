@@ -20,7 +20,6 @@ public class StateCollector extends StateBase
 {
 
 	protected static Channel channel = null;
-	protected String channelName = "capoRobotStates";
 	private StateMessageConsumer stateMessageConsumer;
 
 	// protected final String rabbitHostIP = "192.168.2.101";// "192.168.2.100";
