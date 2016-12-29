@@ -22,7 +22,7 @@ public class CapoApp
 		CapoFearBasedController capoController;
 		try
 		{
-			capoController = new CapoFearBasedController(Integer.parseInt(args[0]), Double.parseDouble(args[1]), args[2]);
+			capoController = new CapoFearBasedController(Integer.parseInt(args[0]), Double.parseDouble(args[1]), args[2], 0);
 			capoController.setLoopDestinations(new Vector2D(Double.parseDouble(args[3]), Double.parseDouble(args[4])), new Vector2D(Double.parseDouble(args[5]), Double.parseDouble(args[6])));
 		}
 		catch (Exception e)

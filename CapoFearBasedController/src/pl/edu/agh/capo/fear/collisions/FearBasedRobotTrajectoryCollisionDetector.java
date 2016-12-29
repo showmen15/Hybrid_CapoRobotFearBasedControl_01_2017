@@ -37,7 +37,7 @@ public class FearBasedRobotTrajectoryCollisionDetector implements
 	@Override
 	public int getCollidingTrajecotryMinStepNumber(Trajectory trajectory)
 	{
-		ArrayList<Iterator<LocationInTime>> otherTrajectoriesLocaiontsIterators = getAllRobotsTrajectories(trajectory);
+		ArrayList<Iterator<LocationInTime>> otherTrajectoriesLocaiontsIterators = getMoreScaryRobotsTrajectories(trajectory);// getAllRobotsTrajectories(trajectory);
 
 		int stepId = 1;
 
@@ -46,17 +46,21 @@ public class FearBasedRobotTrajectoryCollisionDetector implements
 		if (!thisTrajectoryLocaiontsIterators.hasNext())
 			return -1;
 
-		thisTrajectoryLocaiontsIterators.next();
+		// thisTrajectoryLocaiontsIterators.next(); // do wykomentowanie
 
 		while (thisTrajectoryLocaiontsIterators.hasNext())
 		{
-			Location thisTrajectoryLocation = thisTrajectoryLocaiontsIterators.next().getLocation();
+			Location thisTrajectoryLocation = thisTrajectoryLocaiontsIterators.next().getLocation(); // juz
+																										// raz
+																										// pobralem
+																										// naxt
 
 			for (Iterator<LocationInTime> otherTrajectoryLocaiontsIterator : otherTrajectoriesLocaiontsIterators)
 			{
 				if (otherTrajectoryLocaiontsIterator.hasNext())
 				{
 					Location otherTrajectoryLocation = otherTrajectoryLocaiontsIterator.next().getLocation();
+
 					if (thisTrajectoryLocation.getDistance(otherTrajectoryLocation) < CapoRobotMotionModel.robotDiameter)
 						return stepId;
 				}
@@ -71,14 +75,12 @@ public class FearBasedRobotTrajectoryCollisionDetector implements
 		ArrayList<Iterator<LocationInTime>> moreScaryTrajectoriesLocaiontsIterators = new ArrayList<Iterator<LocationInTime>>();
 		synchronized (robotsTrajectories)
 		{
+
 			double thisRobotFearFactor = calculateFearFactor(trajectory.getFirstStepLocation(), thisRobotId);
 			trajectory.setFearFactor(thisRobotFearFactor);
 
 			for (Trajectory otherTrajectory : robotsTrajectories.values())
 			{
-				// {
-				// otherTrajectory.setFearFactor(thisRobotFearFactor);
-				// }
 
 				if (otherTrajectory.getRobotId() == this.thisRobotId)
 					continue;
@@ -87,6 +89,24 @@ public class FearBasedRobotTrajectoryCollisionDetector implements
 					continue;
 
 				Iterator<LocationInTime> otherTrajectoryLocaiontsIterator = otherTrajectory.getTrajectorySteps().iterator();
+
+				// if
+				// (trajectory.getFirstStepLocation().getDistance(otherTrajectory.getFirstStepLocation())
+				// < CapoRobotMotionModel.robotDiameter)
+				// {
+				//
+				// System.out.println("Robot " + this.thisRobotId + "; X; " +
+				// trajectory.getFirstStepLocation().positionX + "; Y; " +
+				// trajectory.getFirstStepLocation().positionY +
+				//
+				// "; Robot " + otherTrajectory.getRobotId() + "; X; " +
+				// otherTrajectory.getFirstStepLocation().positionX + "; Y; " +
+				// otherTrajectory.getFirstStepLocation().positionY
+				//
+				// + "; Dis; " +
+				// trajectory.getFirstStepLocation().getDistance(otherTrajectory.getFirstStepLocation()));
+				// }
+
 				if (otherTrajectoryLocaiontsIterator.hasNext())
 					otherTrajectoryLocaiontsIterator.next(); // set at second
 																// item
@@ -174,14 +194,14 @@ public class FearBasedRobotTrajectoryCollisionDetector implements
 		// return robotFearFactor + gateFearFactor;
 
 		double robotFearFactor = calculateFearFactorOryginal(robotLocation, robotId);
+
 		List<Vector3D> GatesList = new ArrayList<Vector3D>();
-		GatesList.add(new Vector3D(1.15, 2.5, -Math.PI / 2));
+		GatesList.add(new Vector3D(2.5, 2.5, -Math.PI / 2));
 
 		double gateFearFactor = 1.0;
-		// gateFearFactor = calculateFearFactorGate2(robotLocation, robotId,
-		// GatesList);
+		gateFearFactor = calculateFearFactorGate2(robotLocation, robotId, GatesList);
 
-		return robotFearFactor;// * gateFearFactor;
+		return robotFearFactor * gateFearFactor;
 	}
 
 	// poprzednia wersja
@@ -208,29 +228,29 @@ public class FearBasedRobotTrajectoryCollisionDetector implements
 	{
 		double robotFearFactor = 1.0 + 0.01 * (double) robotId;
 
-		// System.out.println("Bazowy: " + robotFearFactor);
-
 		Vector2D robotVersor = new Vector2D(Math.cos(robotLocation.direction), Math.sin(robotLocation.direction));
-		for (Trajectory otherTrajectory : robotsTrajectories.values())
+		synchronized (robotsTrajectories)
 		{
-			// System.out.println("");
 
-			if (otherTrajectory.getRobotId() == robotId)
-				continue;
-			else
+			for (Trajectory otherTrajectory : robotsTrajectories.values())
 			{
-				double angleBetweenRobots = robotVersor.angleTo(new Vector2D(Math.cos(otherTrajectory.getFirstStepLocation().direction), Math.sin(otherTrajectory.getFirstStepLocation().direction)));
+				if (otherTrajectory.getFirstStepLocation() == null)
+					otherTrajectory.getFirstStepLocation();
 
-				// System.out.println("RobotId: " + otherTrajectory.getRobotId()
-				// + "kat pomiedzy robotami: " + angleBetweenRobots +
-				// "Max maxObservationDistance: " + maxObservationDistance +
-				// "Dystans do drugiego robota: " +
-				// robotLocation.getDistance(otherTrajectory.getFirstStepLocation()));
+				if (otherTrajectory.getRobotId() == robotId)
+					continue;
+				else
+					if (robotLocation.getDistance(otherTrajectory.getFirstStepLocation()) > this.maxObservationDistance)
+						continue;
+					else
+					{
+						double angleBetweenRobots = robotVersor.angleTo(new Vector2D(Math.cos(otherTrajectory.getFirstStepLocation().direction), Math.sin(otherTrajectory.getFirstStepLocation().direction)));
 
-				if (Math.abs(angleBetweenRobots) < (Math.PI / 2))
-				{
-					robotFearFactor += ((this.maxObservationDistance - robotLocation.getDistance(otherTrajectory.getFirstStepLocation())) / this.maxObservationDistance) * Math.cos(angleBetweenRobots) * (1.0 + 0.01 * (double) otherTrajectory.getRobotId());
-				}
+						if (Math.abs(angleBetweenRobots) < (Math.PI / 2))
+						{
+							robotFearFactor += ((this.maxObservationDistance - robotLocation.getDistance(otherTrajectory.getFirstStepLocation())) / this.maxObservationDistance) * Math.cos(angleBetweenRobots) * (1.0 + 0.01 * (double) otherTrajectory.getRobotId());
+						}
+					}
 			}
 		}
 
@@ -249,33 +269,37 @@ public class FearBasedRobotTrajectoryCollisionDetector implements
 
 		for (int l = 0; l < gateList.size(); l++)
 		{
-			for (Trajectory otherTrajectory : robotsTrajectories.values())
+			synchronized (robotsTrajectories)
 			{
-				temp_robotPosition = new Vector2D(otherTrajectory.getFirstStepLocation().positionX, otherTrajectory.getFirstStepLocation().positionY);
-				temp_gatePosition = new Vector2D(gateList.get(l).getX(), gateList.get(l).getY());
 
-				temp_psi = psi(temp_gatePosition, temp_robotPosition);
-				temp_G = g(otherTrajectory.getFirstStepLocation().direction, gateList.get(l).getZ());
-
-				if (otherTrajectory.getRobotId() == robotId)
+				for (Trajectory otherTrajectory : robotsTrajectories.values())
 				{
-					result += temp_psi * temp_G * robotFearFactor;
-					continue;
-				}
-				else
-				{
-					double angleBetweenRobots = robotVersor.angleTo(new Vector2D(Math.cos(otherTrajectory.getFirstStepLocation().direction), Math.sin(otherTrajectory.getFirstStepLocation().direction)));
+					temp_robotPosition = new Vector2D(otherTrajectory.getFirstStepLocation().positionX, otherTrajectory.getFirstStepLocation().positionY);
+					temp_gatePosition = new Vector2D(gateList.get(l).getX(), gateList.get(l).getY());
 
-					if (Math.abs(angleBetweenRobots) < Math.PI / 2)
+					temp_psi = psi(temp_gatePosition, temp_robotPosition);
+					temp_G = g(otherTrajectory.getFirstStepLocation().direction, gateList.get(l).getZ());
+
+					if (otherTrajectory.getRobotId() == robotId)
 					{
-						temp_ff = ((this.maxObservationDistance - robotLocation.getDistance(otherTrajectory.getFirstStepLocation())) / this.maxObservationDistance) * Math.cos(angleBetweenRobots) * (1.0 + 0.01 * (double) otherTrajectory.getRobotId());
-
-						result += temp_psi * temp_G * temp_ff;
+						result += temp_psi * temp_G * robotFearFactor;
+						continue;
 					}
 					else
-						result += temp_psi * temp_G * 0;
-				}
+					{
+						double angleBetweenRobots = robotVersor.angleTo(new Vector2D(Math.cos(otherTrajectory.getFirstStepLocation().direction), Math.sin(otherTrajectory.getFirstStepLocation().direction)));
 
+						if (Math.abs(angleBetweenRobots) < Math.PI / 2)
+						{
+							temp_ff = ((this.maxObservationDistance - robotLocation.getDistance(otherTrajectory.getFirstStepLocation())) / this.maxObservationDistance) * Math.cos(angleBetweenRobots) * (1.0 + 0.01 * (double) otherTrajectory.getRobotId());
+
+							result += temp_psi * temp_G * temp_ff;
+						}
+						else
+							result += temp_psi * temp_G * 0;
+					}
+
+				}
 			}
 		}
 
@@ -303,7 +327,7 @@ public class FearBasedRobotTrajectoryCollisionDetector implements
 	private double psi2(Vector2D gateCenterPoint, Vector2D robotPosition)
 	{
 		double distanceGateRobot = getDistance(gateCenterPoint, robotPosition);
-		double Rl = 0.5;
+		double Rl = 1.0;
 		double result;
 
 		if (distanceGateRobot <= Rl)
@@ -315,7 +339,10 @@ public class FearBasedRobotTrajectoryCollisionDetector implements
 
 	private double lambda(double alfa, double gamma)
 	{
-		double subAlfaGamma = alfa - gamma;
+		Vector2D robotAlfa = new Vector2D(Math.cos(alfa), Math.sin(alfa));
+		Vector2D doorGamma = new Vector2D(Math.cos(gamma), Math.sin(gamma));
+		double subAlfaGamma = robotAlfa.angleTo(doorGamma);
+
 		double halfPI = Math.PI / 2;
 
 		if ((subAlfaGamma >= (-halfPI)) && (subAlfaGamma <= halfPI))
@@ -355,17 +382,33 @@ public class FearBasedRobotTrajectoryCollisionDetector implements
 
 	protected int messagesSinceLastDatastructureReset = 0;
 
+	protected int TTL = 10;
+
 	@Override
 	public void consumeMessage(Trajectory trajectory)
 	{
 		synchronized (robotsTrajectories)
 		{
+			// for (Trajectory otherTrajectory : robotsTrajectories.values())
+			// if (otherTrajectory.isFinished)
+			// robotsTrajectories.remove(otherTrajectory);
+
 			if (messagesSinceLastDatastructureReset > 20)
 			{
 				robotsTrajectories.clear();
 				messagesSinceLastDatastructureReset = 0;
 			}
+
 			robotsTrajectories.put(trajectory.getRobotId(), trajectory);
+		}
+	}
+
+	@Override
+	public void removeMassage(Trajectory trajectory)
+	{
+		synchronized (robotsTrajectories)
+		{
+			robotsTrajectories.remove(trajectory.getRobotId());
 		}
 	}
 
@@ -492,6 +535,44 @@ public class FearBasedRobotTrajectoryCollisionDetector implements
 			}
 		}
 		return traj;
+	}
+
+	public ArrayList<Trajectory> GetRobotsSmallerFFTrajectoryWithoutCurrentRobot()
+	{
+		ArrayList<Trajectory> traj = new ArrayList<Trajectory>();
+		Trajectory currentRoboTrajectory = getCurrentRobotTrajectory();
+
+		currentRoboTrajectory.setFearFactor(calculateFearFactor(currentRoboTrajectory.getFirstStepLocation(), currentRoboTrajectory.getRobotId()));
+
+		synchronized (robotsTrajectories)
+		{
+			for (Trajectory otherTrajectory : robotsTrajectories.values())
+			{
+				if (otherTrajectory.getRobotId() == this.thisRobotId)
+					continue;
+				else
+				{
+					otherTrajectory.setFearFactor(calculateFearFactor(otherTrajectory.getFirstStepLocation(), otherTrajectory.getRobotId()));
+
+					if (otherTrajectory.getFearFactor() <= currentRoboTrajectory.getFearFactor())
+						traj.add(otherTrajectory);
+				}
+			}
+		}
+		return traj;
+	}
+
+	private Trajectory getCurrentRobotTrajectory()
+	{
+		synchronized (robotsTrajectories)
+		{
+			for (Trajectory otherTrajectory : robotsTrajectories.values())
+			{
+				if (otherTrajectory.getRobotId() == this.thisRobotId)
+					return otherTrajectory;
+			}
+		}
+		return null;
 	}
 
 	public double CaluclateCurrentRobotTrajectory(Trajectory trajectory)

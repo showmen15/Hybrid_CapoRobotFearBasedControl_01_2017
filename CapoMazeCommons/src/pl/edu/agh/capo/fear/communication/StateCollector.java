@@ -19,7 +19,7 @@ import com.rabbitmq.client.Envelope;
 public class StateCollector extends StateBase
 {
 
-	protected static Channel channel = null;
+	protected Channel channel = null;
 	private StateMessageConsumer stateMessageConsumer;
 
 	// protected final String rabbitHostIP = "192.168.2.101";// "192.168.2.100";
@@ -46,6 +46,8 @@ public class StateCollector extends StateBase
 			factory.setHost(rabbitHostIP);
 			factory.setUsername(rabbitUser);
 			factory.setPassword(rabbitPass);
+			// factory.setHandshakeTimeout(10);
+
 			try
 			{
 				Connection connection = factory.newConnection();
@@ -71,7 +73,12 @@ public class StateCollector extends StateBase
 							try
 							{
 								Trajectory t = (Trajectory) in.readObject();
-								stateMessageConsumer.consumeMessage(t);
+
+								if (!t.isFinished)
+									stateMessageConsumer.consumeMessage(t);
+								else
+									stateMessageConsumer.removeMassage(t);
+
 							}
 							catch (ClassNotFoundException e)
 							{

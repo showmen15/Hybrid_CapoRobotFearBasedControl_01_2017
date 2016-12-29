@@ -7,8 +7,8 @@ import com.vividsolutions.jts.math.Vector2D;
 public class CapoRobotMotionModel
 {
 
-	public static final double wheelsHalfDistance = 0.14;
-	public static final double robotDiameter = 0.3; // 0.5
+	public static final double wheelsHalfDistance = 0.2;
+	public static final double robotDiameter = 0.5; // 0.5 //0.3
 	public static final double robotHalfDiameter = robotDiameter / 2;
 
 	protected static final double verySmallDouble = 0.0001; // nedded in some

@@ -38,7 +38,28 @@ public class MazePanel extends JPanel
 
 	public void addTrajectory(Trajectory trajectory)
 	{
-		robotsTrajectories.put(trajectory.getRobotId(), trajectory);
+		synchronized (robotsTrajectories)
+		{
+			robotsTrajectories.put(trajectory.getRobotId(), trajectory);
+		}
+		this.repaint(100);
+	}
+
+	public void removeTrajectory(Trajectory trajectory)
+	{
+		synchronized (robotsTrajectories)
+		{
+			robotsTrajectories.remove(trajectory.getRobotId());
+		}
+		this.repaint(100);
+	}
+
+	public void ramoveAllTrajectory()
+	{
+		synchronized (robotsTrajectories)
+		{
+			robotsTrajectories.clear();
+		}
 		this.repaint(100);
 	}
 
@@ -101,20 +122,24 @@ public class MazePanel extends JPanel
 
 	private void printRobotsTrajectories(Graphics2D g2)
 	{
-		for (Trajectory t : robotsTrajectories.values())
+		synchronized (robotsTrajectories)
 		{
-			g2.setColor(robotsColors[t.getRobotId() % robotsColors.length]);
-			for (LocationInTime l : t.getTrajectorySteps())
+			for (Trajectory t : robotsTrajectories.values())
+
 			{
-				double x = normalizeCoordinate(l.getLocation().positionX, minX, ratio);
-				double y = normalizeCoordinate(l.getLocation().positionY, minY, ratio);
-				g2.draw(new Ellipse2D.Double(x - ROBOT_HALF_DIAMETER, y - ROBOT_HALF_DIAMETER, ROBOT_HALF_DIAMETER * 2, ROBOT_HALF_DIAMETER * 2));
-				g2.draw(new Line2D.Double(x, y, x + ROBOT_HALF_DIAMETER * 2 * Math.cos(l.getLocation().direction), y + ROBOT_HALF_DIAMETER * 2 * Math.sin(l.getLocation().direction)));
+				g2.setColor(robotsColors[t.getRobotId() % robotsColors.length]);
+				for (LocationInTime l : t.getTrajectorySteps())
+				{
+					double x = normalizeCoordinate(l.getLocation().positionX, minX, ratio);
+					double y = normalizeCoordinate(l.getLocation().positionY, minY, ratio);
+					g2.draw(new Ellipse2D.Double(x - ROBOT_HALF_DIAMETER, y - ROBOT_HALF_DIAMETER, ROBOT_HALF_DIAMETER * 2, ROBOT_HALF_DIAMETER * 2));
+					g2.draw(new Line2D.Double(x, y, x + ROBOT_HALF_DIAMETER * 2 * Math.cos(l.getLocation().direction), y + ROBOT_HALF_DIAMETER * 2 * Math.sin(l.getLocation().direction)));
 
-				if (l.getTime() == 0.0)
-					g2.drawString(String.format("%.4g%n", t.getFearFactor()), (float) x + 12, (float) y + 10);
+					if (l.getTime() == 0.0)
+						g2.drawString(String.format("%.4g%n", t.getFearFactor()), (float) x + 12, (float) y + 10);
 
-				g2.setColor(Color.lightGray);
+					g2.setColor(Color.lightGray);
+				}
 			}
 		}
 

@@ -43,6 +43,7 @@ public class StatePublisher extends StateBase
 			{
 				try
 				{
+					rabbitmqChannel.basicCancel("ok");
 					rabbitmqChannel.close();
 					rabbitmqChannel.getConnection().close();
 				}

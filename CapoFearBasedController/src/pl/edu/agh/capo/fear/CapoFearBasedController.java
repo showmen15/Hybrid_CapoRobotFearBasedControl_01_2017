@@ -311,8 +311,8 @@ public class CapoFearBasedController implements Runnable
 
 						TimeDuration = Duration.between(start, end).toMillis();
 
-						saveToFile();
-						System.exit(1);
+						// saveToFile();
+						// System.exit(1);
 					}
 					else
 					{
@@ -323,49 +323,66 @@ public class CapoFearBasedController implements Runnable
 					}
 				}
 
-				if (this.isPaused)
+				try
 				{
-					this.capoRobotMotionModel.setVelocity(0, 0);
-				}
-				else
-				{
-					Vector2D robotVersor = capoRobotMotionModel.getVersor();
-					Vector2D targetVector = destination.subtract(this.capoRobotMotionModel.getLocation().getPositionVector());
-					double angleToTarget = robotVersor.angleTo(targetVector);
 
-					if (destination == targetDestination)
-						this.capoRobotMotionModel.setVelocity_LinearVelocity_AngularVelocity(Math.cos(angleToTarget / 2) * Math.min(1, destinationDistance) * this.capoRobotMotionModel.getMaxLinearVelocity() / 2, 2 * angleToTarget);
+					if (this.isPaused)
+					{
+						this.capoRobotMotionModel.setVelocity(0, 0);
+					}
 					else
-						this.capoRobotMotionModel.setVelocity_LinearVelocity_AngularVelocity(Math.cos(angleToTarget / 2) * this.capoRobotMotionModel.getMaxLinearVelocity() / 2, 2 * angleToTarget);
+					{
+						Vector2D robotVersor = capoRobotMotionModel.getVersor();
+						Vector2D targetVector = destination.subtract(this.capoRobotMotionModel.getLocation().getPositionVector());
+						double angleToTarget = robotVersor.angleTo(targetVector);
 
+						if (destination == targetDestination)
+							this.capoRobotMotionModel.setVelocity_LinearVelocity_AngularVelocity(Math.cos(angleToTarget / 2) * Math.min(1, destinationDistance) * this.capoRobotMotionModel.getMaxLinearVelocity() / 2, 2 * angleToTarget);
+						else
+							this.capoRobotMotionModel.setVelocity_LinearVelocity_AngularVelocity(Math.cos(angleToTarget / 2) * this.capoRobotMotionModel.getMaxLinearVelocity() / 2, 2 * angleToTarget);
+
+					}
+				}
+				catch (Exception e)
+				{
+					int i = 323;
 				}
 
-				Trajectory trajectory = this.capoSafeTrajectoryGenerator.getSafeTrajectoryNewNew(this.capoRobotMotionModel, destination, null);
+				Trajectory trajectory = this.capoSafeTrajectoryGenerator.getSafeTrajectoryNewNewTEST(this.capoRobotMotionModel, destination, statePublisher, robotId);
 				trajectory.setRobotId(robotId);
 
 				System.out.println("Run loop: location=(" + this.capoRobotMotionModel.getLocation().positionX + "; " + this.capoRobotMotionModel.getLocation().positionY + "; " + this.capoRobotMotionModel.getLocation().direction + ")" + ";  velocity=(" + this.capoRobotMotionModel.getVelocityLeft() + "; " + this.capoRobotMotionModel.getVelocityRight() + ") ");
 
 				this.monitorThread.interrupt();
 
-				if (this.capoRobotMotionModel.getLinearVelocity() > 0 && getFrontDistance() < 0.25)
+				try
 				{
-					this.capoRobotMotionModel.setVelocity(0, 0);
-					trajectory = this.capoSafeTrajectoryGenerator.buildTrajectory(this.capoRobotMotionModel, destination);
-					System.out.println("Emergency STOP !!!! ");
-					SetRoboClawVelocity(0, 0);
+					if (this.capoRobotMotionModel.getLinearVelocity() > 0 && getFrontDistance() < 0.15)
+					{
+						this.capoRobotMotionModel.setVelocity(0, 0);
+						trajectory = this.capoSafeTrajectoryGenerator.buildTrajectory(this.capoRobotMotionModel, destination);
+						System.out.println("Emergency STOP !!!! ");
+						SetRoboClawVelocity(0, 0);
+					}
+				}
+				catch (Exception ex)
+				{
+					int i = 434;
+					i++;
 				}
 
 				SetRoboClawVelocity(this.capoRobotMotionModel.getVelocityLeft(), this.capoRobotMotionModel.getVelocityRight());
 
 				trajectory.setRobotId(robotId);
 				statePublisher.publishCapoRobotStateAndPlan(trajectory);
+
 			}
 		}
 		catch (Exception ex)
 		{
 			LoopNumber = -1;
-			saveToFile();
-			System.exit(0);
+			// saveToFile();
+			// System.exit(0);
 		}
 
 		this.isRun = true;
@@ -387,64 +404,73 @@ public class CapoFearBasedController implements Runnable
 
 		try
 		{
-			scanPoints = scan.getPoints();
+			scanPoints = scan.getPoints(400);
 		}
 		catch (Exception e)
 		{
 			System.out.println("Exception in scan.getPoints: " + e.getMessage());
 			return 0;
 		}
-		double fronLeftDistance = Double.MAX_VALUE;
-		double fronRightDistance = Double.MAX_VALUE;
-		double frontDistance = Double.MAX_VALUE;
-		double leftDistance = Double.MAX_VALUE;
-		double rightDistance = Double.MAX_VALUE;
-		for (MapPoint mp : scanPoints)
-		{
-			if (mp.getDistance() < 50.0D)
-				continue;
-			if ((Math.abs(mp.getAngle()) > 35.0D && mp.getDistance() < 120.0D)) // front
-																				// carefully,
-																				// sides
-																				// less)
-				continue;
 
-			if (Math.abs(mp.getAngle()) < 90.0D)
+		try
+		{
+			double fronLeftDistance = Double.MAX_VALUE;
+			double fronRightDistance = Double.MAX_VALUE;
+			double frontDistance = Double.MAX_VALUE;
+			double leftDistance = Double.MAX_VALUE;
+			double rightDistance = Double.MAX_VALUE;
+			for (MapPoint mp : scanPoints)
 			{
-				// double inFrontMaxDistanceAtAngle = 216.0D /
-				// Math.abs(Math.sin(Math.toRadians(mp.getAngle())));
-				double inFrontMaxDistanceAtAngle = 216.0D / Math.abs(Math.sin(Math.toRadians(mp.getAngle())));
-				if (mp.getDistance() < inFrontMaxDistanceAtAngle)
+				if (mp.getDistance() < 50.0D)
+					continue;
+				if ((Math.abs(mp.getAngle()) > 35.0D && mp.getDistance() < 120.0D)) // front
+																					// carefully,
+																					// sides
+																					// less)
+					continue;
+
+				if (Math.abs(mp.getAngle()) < 90.0D)
 				{
-					if ((mp.getAngle() <= 0.0D) && (mp.getDistance() < fronLeftDistance))
+					// double inFrontMaxDistanceAtAngle = 216.0D /
+					// Math.abs(Math.sin(Math.toRadians(mp.getAngle())));
+					double inFrontMaxDistanceAtAngle = 216.0D / Math.abs(Math.sin(Math.toRadians(mp.getAngle())));
+					if (mp.getDistance() < inFrontMaxDistanceAtAngle)
 					{
-						fronLeftDistance = mp.getDistance();
+						if ((mp.getAngle() <= 0.0D) && (mp.getDistance() < fronLeftDistance))
+						{
+							fronLeftDistance = mp.getDistance();
+						}
+						if ((mp.getAngle() >= 0.0D) && (mp.getDistance() < fronRightDistance))
+						{
+							fronRightDistance = mp.getDistance();
+						}
 					}
-					if ((mp.getAngle() >= 0.0D) && (mp.getDistance() < fronRightDistance))
+					else
 					{
-						fronRightDistance = mp.getDistance();
-					}
-				}
-				else
-				{
-					if ((mp.getAngle() <= 0.0D) && (mp.getDistance() < leftDistance))
-					{
-						leftDistance = mp.getDistance();
-					}
-					if ((mp.getAngle() >= 0.0D) && (mp.getDistance() < rightDistance))
-					{
-						rightDistance = mp.getDistance();
+						if ((mp.getAngle() <= 0.0D) && (mp.getDistance() < leftDistance))
+						{
+							leftDistance = mp.getDistance();
+						}
+						if ((mp.getAngle() >= 0.0D) && (mp.getDistance() < rightDistance))
+						{
+							rightDistance = mp.getDistance();
+						}
 					}
 				}
 			}
-		}
-		leftDistance /= 1000.0D;
-		rightDistance /= 1000.0D;
-		fronLeftDistance /= 1000.0D;
-		fronRightDistance /= 1000.0D;
-		frontDistance = Math.min(fronLeftDistance, fronRightDistance);
+			leftDistance /= 1000.0D;
+			rightDistance /= 1000.0D;
+			fronLeftDistance /= 1000.0D;
+			fronRightDistance /= 1000.0D;
+			frontDistance = Math.min(fronLeftDistance, fronRightDistance);
+			return frontDistance;
 
-		return frontDistance;
+		}
+		catch (Exception e)
+		{
+			System.out.println("Exception in return frontDistance: " + e.getMessage());
+			return 0;
+		}
 	}
 
 	void reduceSpeedDueToSensorRedingTimeout()

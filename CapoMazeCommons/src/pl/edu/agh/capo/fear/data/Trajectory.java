@@ -7,6 +7,8 @@ import com.vividsolutions.jts.math.Vector2D;
 
 public class Trajectory implements Serializable
 {
+	public Boolean isFinished = false;
+
 	private static final long serialVersionUID = -8494941241191154511L;
 	protected ArrayList<LocationInTime> trajectorySteps;
 	protected Location targetLocation;

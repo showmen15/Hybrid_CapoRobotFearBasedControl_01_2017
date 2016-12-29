@@ -44,20 +44,21 @@ import java.time.temporal.Temporal;
 import java.time.temporal.ChronoUnit;
 import java.util.Random;
 
-public class CapoFearBasedControllerMock implements Runnable
+public class CapoFearBasedControllerMock2 implements Runnable
 {
-
 	protected AmberClient client;
 	protected RoboclawProxy roboclawProxy;
 	protected HokuyoProxy hokuyoProxy;
 	protected CapoRobotMock capoRobotMock;
 
-	protected Thread monitorThread;
+	// protected Thread monitorThread;
 
 	protected CapoRobotMotionModel capoRobotMotionModel;
 	protected StatePublisher statePublisher;
 
 	protected CapoSafeTrajectoryGenerator capoSafeTrajectoryGenerator;
+
+	protected List<Vector2D> Destinations;
 
 	protected Vector2D targetDestination = null, destination = null,
 			nextDestination = null;
@@ -80,14 +81,13 @@ public class CapoFearBasedControllerMock implements Runnable
 	protected List<Node> nodes;
 	protected List<Vector2D> targetList = null;
 
+	StateCollector stateCollector;
+
 	public IRobotManager robotManger;
 
-	public void SetMonitorThread(Thread monitorThread)
-	{
-		this.monitorThread = monitorThread;
-	}
+	protected boolean isRun = true;
 
-	public CapoFearBasedControllerMock(int robotId, double maxLinearVelocity, String mazeRosonFilename, double initX, double initY, double initAngle) throws Exception
+	public CapoFearBasedControllerMock2(int robotId, double maxLinearVelocity, String mazeRosonFilename, double initX, double initY, double initAngle, List<Vector2D> destinations) throws Exception
 	{
 		this.robotId = robotId;
 
@@ -95,12 +95,8 @@ public class CapoFearBasedControllerMock implements Runnable
 		InitY = initY;
 		InitAngle = initAngle;
 		MaxLinearVelocity = maxLinearVelocity;
+		Destinations = destinations;
 		LoopNumber = 0;
-		// CaseID = caseID;
-
-		// this.client = new AmberClient("192.168.2."+(200+robotId), 26233);
-		// this.roboclawProxy = new RoboclawProxy(this.client, 0);
-		// this.hokuyoProxy = new HokuyoProxy(this.client, 0);
 
 		this.capoRobotMock = new CapoRobotMock(maxLinearVelocity, initX, initY, initAngle);
 
@@ -110,12 +106,10 @@ public class CapoFearBasedControllerMock implements Runnable
 
 		this.capoSafeTrajectoryGenerator = new CapoSafeTrajectoryGenerator();
 		this.capoSafeTrajectoryGenerator.addColisionDetector(new MazeCollisionDetector(mazeRosonFilename));
-		// RobotTrajectoryCollisionDetector robotTrajectoryCollisionDetector =
-		// new RobotTrajectoryCollisionDetector(robotId);
 		FearBasedRobotTrajectoryCollisionDetector robotTrajectoryCollisionDetector = new FearBasedRobotTrajectoryCollisionDetector(robotId, maxLinearVelocity);
 		this.capoSafeTrajectoryGenerator.addColisionDetector(robotTrajectoryCollisionDetector);
 
-		StateCollector stateCollector = new StateCollector();
+		stateCollector = new StateCollector();
 		stateCollector.setConsumer(robotTrajectoryCollisionDetector);
 
 		Rooms = MazeHelper.buildRooms(MazeMap.loadMazeFromFile(mazeRosonFilename));
@@ -124,6 +118,222 @@ public class CapoFearBasedControllerMock implements Runnable
 		spaceNodes = MazeMap.loadMazeFromFile(mazeRosonFilename).getSpaceNodes();
 		nodes = MazeMap.loadMazeFromFile(mazeRosonFilename).getNodes();
 	}
+
+	public void Stop()
+	{
+		this.isRun = false;
+		capoRobotMock.SetRoboClawVelocity(0.0D, 0.0D);
+		this.statePublisher.close();
+	}
+
+	public void run()
+	{
+		try
+		{
+			Vector2D destination;
+			double destinationDistance;
+
+			Vector2D robotVersor;
+			Vector2D targetVector;
+			double angleToTarget;
+
+			Trajectory trajectory;
+
+			while (this.isRun)
+			{
+				LoopNumber++;
+				destination = this.targetDestination = Destinations.get(0);
+
+				this.capoRobotMotionModel.setLocation(capoRobotMock.GetRobotLocation());
+
+				destinationDistance = destination.distance(this.capoRobotMotionModel.getLocation().getPositionVector());
+
+				if (destinationDistance < CapoRobotMotionModel.wheelsHalfDistance)
+				{
+					if (Destinations.size() <= 1)
+					{
+						// this.capoRobotMotionModel.setVelocity(0, 0);
+
+						trajectory = new Trajectory(new Vector2D(0, 0));
+						trajectory.setRobotId(robotId);
+						trajectory.isFinished = true;
+
+						statePublisher.publishCapoRobotStateAndPlan(trajectory);
+						// Stop();
+						this.isRun = false;
+
+						if (robotManger != null)
+							robotManger.onFinish(robotId, LoopNumber);
+
+						continue;
+					}
+					else
+					{
+						Destinations.remove(0);
+						continue;
+					}
+				}
+
+				robotVersor = capoRobotMotionModel.getVersor();
+				targetVector = destination.subtract(this.capoRobotMotionModel.getLocation().getPositionVector());
+				angleToTarget = robotVersor.angleTo(targetVector);
+
+				this.capoRobotMotionModel.setVelocity_LinearVelocity_AngularVelocity(Math.cos(angleToTarget / 2) * this.capoRobotMotionModel.getMaxLinearVelocity() / 2, 2 * angleToTarget);
+
+				trajectory = this.capoSafeTrajectoryGenerator.getSafeTrajectoryNewNewTEST(this.capoRobotMotionModel, destination, statePublisher, robotId);
+				trajectory.setRobotId(robotId);
+
+				capoRobotMock.SetRoboClawVelocity(this.capoRobotMotionModel.getVelocityLeft(), this.capoRobotMotionModel.getVelocityRight());
+
+				statePublisher.publishCapoRobotStateAndPlan(trajectory);
+
+			}
+		}
+		catch (Exception ex)
+		{
+			ex.printStackTrace();
+			Stop();
+			System.exit(0);
+		}
+	}
+
+	// this.targetDestination = TargetDestination.get(CurrentTargetDestination);
+
+	// LoopNumber++;
+
+	// this.capoRobotMotionModel.setLocation(capoRobotMock.GetRobotLocation());
+
+	// destination =
+	// getCurrentDestination(this.capoRobotMotionModel.getLocation().getPositionVector(),
+	// this.targetDestination);
+
+	// double destinationDistance =
+	// destination.distance(this.capoRobotMotionModel.getLocation().getPositionVector());
+
+	// if (destinationDistance < CapoRobotMotionModel.wheelsHalfDistance)
+	// {
+	// if (destination == targetDestination && (TargetDestination.size() - 1) ==
+	// CurrentTargetDestination)
+	// {
+	// this.capoRobotMotionModel.setVelocity(0, 0);
+	// Instant end = Instant.now();
+	//
+	// TimeDuration = Duration.between(start, end).toMillis();
+	//
+	// if (robotManger != null)
+	// robotManger.onFinish(robotId, LoopNumber);
+	//
+	// // saveToFile();
+	// // System.exit(1);
+	// isRun = false;
+	// }
+	// else
+	// if (destination == targetDestination && (TargetDestination.size() - 1) !=
+	// CurrentTargetDestination)
+	// {
+	// CurrentTargetDestination++;
+	//
+	// targetList = null;
+	//
+	// this.targetDestination = TargetDestination.get(CurrentTargetDestination);
+	// destination =
+	// getCurrentDestination(this.capoRobotMotionModel.getLocation().getPositionVector(),
+	// this.targetDestination);
+	// destinationDistance =
+	// targetDestination.distance(this.capoRobotMotionModel.getLocation().getPositionVector());
+	// }
+	// else
+	// {
+	// removeReachedTarget(); // usuwamy z listy osiagniety
+	// // cel
+	// // i pobieramy kolejny
+	// destination =
+	// getCurrentDestination(this.capoRobotMotionModel.getLocation().getPositionVector(),
+	// this.targetDestination);
+	// destinationDistance =
+	// targetDestination.distance(this.capoRobotMotionModel.getLocation().getPositionVector());
+	// }
+	// }
+
+	// if (this.isPaused)
+	// {
+	// this.capoRobotMotionModel.setVelocity(0, 0);
+	// }
+	// else
+	// {
+	// Vector2D robotVersor = capoRobotMotionModel.getVersor();
+	// Vector2D targetVector =
+	// destination.subtract(this.capoRobotMotionModel.getLocation().getPositionVector());
+	// double angleToTarget = robotVersor.angleTo(targetVector);
+	//
+	// if (destination == targetDestination)
+	// this.capoRobotMotionModel.setVelocity_LinearVelocity_AngularVelocity(Math.cos(angleToTarget
+	// / 2) * Math.min(1, destinationDistance) *
+	// this.capoRobotMotionModel.getMaxLinearVelocity() / 2, 2 * angleToTarget);
+	// else
+	// this.capoRobotMotionModel.setVelocity_LinearVelocity_AngularVelocity(Math.cos(angleToTarget
+	// / 2) * this.capoRobotMotionModel.getMaxLinearVelocity() / 2, 2 *
+	// angleToTarget);
+	//
+	// }
+
+	// Trajectory trajectory =
+	// this.capoSafeTrajectoryGenerator.getSafeTrajectoryNewNewTEST(this.capoRobotMotionModel,
+	// destination, statePublisher, robotId);
+	// System.out.print("Robot ID " + this.robotId +
+	// "getVelocityLeft: " +
+	// this.capoRobotMotionModel.getVelocityLeft() +
+	// "getVelocityRight: " +
+	// this.capoRobotMotionModel.getVelocityRight() + "\n");
+
+	// trajectory.setRobotId(robotId);
+
+	// this.monitorThread.interrupt();
+
+	// try
+	// {
+	// if
+	// (this.capoSafeTrajectoryGenerator.GetRobotsSmallerFFTrajectoryWithoutCurrentRobot(trajectory)
+	// < 0.15)
+	// {
+	// this.capoRobotMotionModel.setVelocity(0, 0);
+	//
+	// trajectory =
+	// this.capoSafeTrajectoryGenerator.buildTrajectory(this.capoRobotMotionModel,
+	// destination);
+	// trajectory.setRobotId(robotId);
+	// System.out.println("Emergency STOP !!!! ");
+	// }
+	// }
+	// catch (Exception ex)
+	// {
+	// }
+
+	// System.out.println("Left: " +
+	// this.capoRobotMotionModel.getVelocityLeft() + "Right: " +
+	// this.capoRobotMotionModel.getVelocityRight());
+
+	// capoRobotMock.SetRoboClawVelocity(this.capoRobotMotionModel.getVelocityLeft(),
+	// this.capoRobotMotionModel.getVelocityRight());
+	//
+	// // capoRobotMock.SetRoboClawVelocity(0, 0);
+	// statePublisher.publishCapoRobotStateAndPlan(trajectory);
+	//
+	// }
+	// }
+	// catch (Exception ex)
+	// {
+	// LoopNumber = -1;
+	// saveToFile();
+	// System.exit(0);
+	// }
+	// }
+	//
+
+	// public void SetMonitorThread(Thread monitorThread)
+	// {
+	// this.monitorThread = monitorThread;
+	// }
 
 	private Dijkstra initGraph(List<NodeNode> nodeNodes)
 	{
@@ -261,143 +471,11 @@ public class CapoFearBasedControllerMock implements Runnable
 		TargetDestination.add(destination);
 	}
 
-	protected boolean isRun = true;
-
-	public void Stop()
-	{
-		this.isRun = false;
-		capoRobotMock.SetRoboClawVelocity(0.0D, 0.0D);
-		this.statePublisher.close();
-	}
-
 	protected boolean isPaused = false;
 
 	public void togglePaused()
 	{
 		this.isPaused = !this.isPaused;
-	}
-
-	public void run()
-	{
-		try
-		{
-
-			Instant start = Instant.now();
-
-			while (this.isRun)
-			{
-
-				this.targetDestination = TargetDestination.get(CurrentTargetDestination);
-
-				LoopNumber++;
-				// System.out.println("Wynik " + LoopNumber);
-				this.capoRobotMotionModel.setLocation(capoRobotMock.GetRobotLocation());
-
-				destination = getCurrentDestination(this.capoRobotMotionModel.getLocation().getPositionVector(), this.targetDestination);
-
-				double destinationDistance = destination.distance(this.capoRobotMotionModel.getLocation().getPositionVector());
-
-				if (destinationDistance < CapoRobotMotionModel.wheelsHalfDistance)
-				{
-					if (destination == targetDestination && (TargetDestination.size() - 1) == CurrentTargetDestination)
-					{
-						this.capoRobotMotionModel.setVelocity(0, 0);
-						Instant end = Instant.now();
-
-						TimeDuration = Duration.between(start, end).toMillis();
-
-						if (robotManger != null)
-							robotManger.onFinish(robotId, LoopNumber);
-
-						// saveToFile();
-						// System.exit(1);
-						isRun = false;
-					}
-					else
-						if (destination == targetDestination && (TargetDestination.size() - 1) != CurrentTargetDestination)
-						{
-							CurrentTargetDestination++;
-
-							targetList = null;
-
-							this.targetDestination = TargetDestination.get(CurrentTargetDestination);
-							destination = getCurrentDestination(this.capoRobotMotionModel.getLocation().getPositionVector(), this.targetDestination);
-							destinationDistance = targetDestination.distance(this.capoRobotMotionModel.getLocation().getPositionVector());
-						}
-						else
-						{
-							removeReachedTarget(); // usuwamy z listy osiagniety
-													// cel
-													// i pobieramy kolejny
-							destination = getCurrentDestination(this.capoRobotMotionModel.getLocation().getPositionVector(), this.targetDestination);
-							destinationDistance = targetDestination.distance(this.capoRobotMotionModel.getLocation().getPositionVector());
-						}
-				}
-
-				if (this.isPaused)
-				{
-					this.capoRobotMotionModel.setVelocity(0, 0);
-				}
-				else
-				{
-					Vector2D robotVersor = capoRobotMotionModel.getVersor();
-					Vector2D targetVector = destination.subtract(this.capoRobotMotionModel.getLocation().getPositionVector());
-					double angleToTarget = robotVersor.angleTo(targetVector);
-
-					if (destination == targetDestination)
-						this.capoRobotMotionModel.setVelocity_LinearVelocity_AngularVelocity(Math.cos(angleToTarget / 2) * Math.min(1, destinationDistance) * this.capoRobotMotionModel.getMaxLinearVelocity() / 2, 2 * angleToTarget);
-					else
-						this.capoRobotMotionModel.setVelocity_LinearVelocity_AngularVelocity(Math.cos(angleToTarget / 2) * this.capoRobotMotionModel.getMaxLinearVelocity() / 2, 2 * angleToTarget);
-
-				}
-
-				Trajectory trajectory = this.capoSafeTrajectoryGenerator.getSafeTrajectoryNewNewTEST(this.capoRobotMotionModel, destination, statePublisher, robotId);
-				// System.out.print("Robot ID " + this.robotId +
-				// "getVelocityLeft: " +
-				// this.capoRobotMotionModel.getVelocityLeft() +
-				// "getVelocityRight: " +
-				// this.capoRobotMotionModel.getVelocityRight() + "\n");
-
-				trajectory.setRobotId(robotId);
-
-				this.monitorThread.interrupt();
-
-				// try
-				// {
-				// if
-				// (this.capoSafeTrajectoryGenerator.GetRobotsSmallerFFTrajectoryWithoutCurrentRobot(trajectory)
-				// < 0.15)
-				// {
-				// this.capoRobotMotionModel.setVelocity(0, 0);
-				//
-				// trajectory =
-				// this.capoSafeTrajectoryGenerator.buildTrajectory(this.capoRobotMotionModel,
-				// destination);
-				// trajectory.setRobotId(robotId);
-				// System.out.println("Emergency STOP !!!! ");
-				// }
-				// }
-				// catch (Exception ex)
-				// {
-				// }
-
-				// System.out.println("Left: " +
-				// this.capoRobotMotionModel.getVelocityLeft() + "Right: " +
-				// this.capoRobotMotionModel.getVelocityRight());
-
-				capoRobotMock.SetRoboClawVelocity(this.capoRobotMotionModel.getVelocityLeft(), this.capoRobotMotionModel.getVelocityRight());
-
-				// capoRobotMock.SetRoboClawVelocity(0, 0);
-				statePublisher.publishCapoRobotStateAndPlan(trajectory);
-
-			}
-		}
-		catch (Exception ex)
-		{
-			LoopNumber = -1;
-			saveToFile();
-			System.exit(0);
-		}
 	}
 
 	void reduceSpeedDueToSensorRedingTimeout()
